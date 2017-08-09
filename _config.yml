@@ -1,1 +1,9 @@
 theme: jekyll-theme-midnight
+highlight: rouge
+
+title: Random Adventures Through Infosec
+description: For those breaking into the industry and seasoned veterans alike
+author: 0xdeadbeefJERKY
+
+gems:
+  - jekyll-redirect-from
