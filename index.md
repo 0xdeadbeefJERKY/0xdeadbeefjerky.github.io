@@ -1,5 +1,5 @@
 ---
-title: Home - 0xdeadbeefJERKY
+title: Home
 layout: default
 permalink: /
 redirect_from: "/assets/"
