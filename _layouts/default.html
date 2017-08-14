@@ -6,6 +6,7 @@
     <title>{{ site.title | default: site.github.repository_name }} by {{ site.github.owner_name }}</title>
     <link rel="stylesheet" href="{{ '/assets/css/style.css?v=' | append: site.github.build_revision | relative_url }}">
     <link rel="stylesheet" href="{{ '/assets/css/font-awesome.css' }}">
+    <link rel="shortcut icon" href="/assets/images/favicon.png">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
     <script src="{{ '/assets/js/respond.js' | relative_url }}"></script>
     <!--[if lt IE 9]>
@@ -25,9 +26,9 @@
       <div id="header">
 
         <div class="topnav">
-            <a href="/">Home</a>
-            <a href="/about">About</a>
-            <a href="/blog">Blog</a>
+            <a style="font-family:monospace;" href="/"><span>0xdeadbeef</span><span style="color:MediumSpringGreen">JERKY</span></a>
+            <a style="font-family:monospace;" href="/about">About</a>
+            <a style="font-family:monospace;" href="/blog">Blog</a>
             <div class="right">
               <a class="icon" href="https://linkedin.com/in/dspinosa" target="_blank"><i class="fa fa-linkedin-square"></i></a>
               <a class="icon" href="https://github.com/0xdeadbeefJERKY" target="_blank"><i class="fa fa-github"></i></a>
@@ -39,8 +40,9 @@
       
       <section>
         <div id="title">
-          <h1 style="font-family:monospace;">{{ site.author | default: site.github.repository_name }}</h1>
-          <p>{{ site.description | default: site.github.project_tagline }}</p>
+          <h1>{{ site.title | default: site.github.repository_name }}</h1>
+          <h3 style="text-align:center;"><i>{{ site.description }}</i></h3>
+          <br>
           <hr>
         </div>
 
