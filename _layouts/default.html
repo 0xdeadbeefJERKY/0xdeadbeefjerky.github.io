@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="{{ site.lang | default: "en-US" }}">
+
   <head>
     <meta charset="utf-8">
     <meta http-equiv="X-UA-Compatible" content="chrome=1">
@@ -15,7 +16,7 @@
     <!--[if lt IE 8]>
     <link rel="stylesheet" href="{{ '/assets/css/ie.css' | relative_url }}">
     <![endif]-->
-    <meta name="viewport" content="width=device-width, initial-scale=1, user-scalable=no">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
   </head>
 
@@ -23,10 +24,12 @@
 
     <div class="wrapper">
 
-      <div id="header">
+      <div id="header"> 
 
         <div class="topnav">
-            <a style="font-family:monospace;" href="/"><span>0xdeadbeef</span><span style="color:MediumSpringGreen">JERKY</span></a>
+            <div>
+              <a style="font-family:monospace;" href="/"><span>0xdeadbeef</span><span style="color:MediumSpringGreen">JERKY</span></a>
+            </div>
             <a style="font-family:monospace;" href="/about">About</a>
             <a style="font-family:monospace;" href="/blog">Blog</a>
             <div class="right">
@@ -35,9 +38,9 @@
               <a class="icon" href="https://twitter.com/0xdeadbeefJERKY" target="_blank"><i class="fa fa-twitter-square"></i></a>
             </div>
         </div>
-
-      </div>
       
+      </div>
+
       <section>
         <div id="title">
           <h1>{{ site.title | default: site.github.repository_name }}</h1>
@@ -60,6 +63,10 @@
         })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
         ga('create', '{{ site.google_analytics }}', 'auto');
         ga('send', 'pageview');
+
+        $('button').click(function() {
+          $(this).toggleClass('expanded').siblings('div').slideToggle();
+        });
       </script>
     {% endif %}
   </body>
