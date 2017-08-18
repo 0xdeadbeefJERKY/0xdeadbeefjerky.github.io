@@ -2,7 +2,7 @@
 layout: post
 title:  "The Alpha & Lessons Learned"
 date:   2017-08-13 17:51:00 -0400
-categories: jekyll update
+
 ---
 
 As stated in my ["about me"](/about) page, there have been more than a few conversations that involved someone asking me how I successfully "broke" into the information security field and, more importantly, how they could as well. Although this topic has been covered quite a bit, I felt it would be beneficial to offer my two cents to others looking to follow a similar path. However, I would **strongly** recommend you read the following posts before diving into my content:
