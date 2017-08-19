@@ -4,7 +4,7 @@ title: Blog
 permalink: /blog/
 ---
 <u1>
-	{% for post in site.posts limit 10 %}
+	{% for post in site.posts %}
 	<h1><a href="{{ site.baseurl }}{{ post.url }}">{{ post.title }}</a></h1>
 
 	<h3><i><span>{{ post.date | date_to_string }}</span></i></h3>
