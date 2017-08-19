@@ -24,22 +24,26 @@
 
     <div class="wrapper">
 
-      <div id="header"> 
+      <header id="header" class="header"> 
 
-        <div class="topnav">
-            <div>
-              <a style="font-family:monospace;" href="/"><span>0xdeadbeef</span><span style="color:MediumSpringGreen">JERKY</span></a>
-            </div>
-            <a style="font-family:monospace;" href="/about">About</a>
-            <a style="font-family:monospace;" href="/blog">Blog</a>
-            <div class="right">
-              <a class="icon" href="https://linkedin.com/in/dspinosa" target="_blank"><i class="fa fa-linkedin-square"></i></a>
-              <a class="icon" href="https://github.com/0xdeadbeefJERKY" target="_blank"><i class="fa fa-github"></i></a>
-              <a class="icon" href="https://twitter.com/0xdeadbeefJERKY" target="_blank"><i class="fa fa-twitter-square"></i></a>
-            </div>
-        </div>
-      
-      </div>
+        <a style="font-family:monospace;" href="/"><span>0xdeadbeef</span><span style="color:MediumSpringGreen">JERKY</span></a>
+
+        <input style="text-align: right; float: right" class="menu-btn" type="checkbox" id="menu-btn" />
+        <label class="menu-icon" for="menu-btn" onclick="myFunction(this)"><span class="navicon"></span>
+            <div class="bar1"></div>
+            <div class="bar2"></div>
+            <div class="bar3"></div>
+        </label>
+        
+        <ul class="menu">
+          <li><a href="/about">About</a></li>
+          <li><a href="/blog">Blog</a></li>
+          <li><a class="icon" href="https://linkedin.com/in/dspinosa" target="_blank"><i class="fa fa-linkedin-square"></i></a></li>
+          <li><a class="icon" href="https://github.com/0xdeadbeefJERKY" target="_blank"><i class="fa fa-github"></i></a></li>
+          <li><a class="icon" href="https://twitter.com/0xdeadbeefJERKY" target="_blank"><i class="fa fa-twitter-square"></i></a></li>
+        </ul>
+
+      </header>
 
       <section>
         <div id="title">
@@ -69,5 +73,12 @@
         });
       </script>
     {% endif %}
+
+    <script type="text/javascript">
+      function myFunction(x) {
+        x.classList.toggle("change");
+      }
+    </script>
+
   </body>
 </html>
