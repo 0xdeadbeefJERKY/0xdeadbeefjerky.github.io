@@ -22,11 +22,11 @@ A significant portion of hacking is:
 
 Although certainly not a novel concept, the message is vital to becoming a successful security professional. This holds doubly true for the defensive side of the ball. Information security is a perpetual game of "cat and mouse". For defensive security specialists, staying on top of the latest and most effective offensive techniques plays a major role in securing things. Conversely, offensive security specialists need to constantly adapt and/or redesign their techniques to bypass said defenses.
 
-Although this appears to be generic advice out-of-the-box, this resonates with me more and more each day. Without comprehensive and intimate knowledge of your target, it becomes exponentially more difficult to secure or compromise said target. The next logical question is naturally, "What do I need to know?". I've provided several topics below that will help aspiring security professionals to hit the ground running. Note that this is not, by any means, a comprehensive list. 
+Despite being seemingly generic advice, this resonates with me more and more each day. Without comprehensive and intimate knowledge of your target, it becomes exponentially more difficult to secure or compromise it. The next logical question is naturally, "What do I need to know?" I've provided several topics below that will help aspiring security professionals to hit the ground running. Note that this is not, by any means, a comprehensive list. 
 
 * <b>Network Security</b>
 	* TCP vs. UDP and common services using both
-	* Common protocols used on Local Area Networks (e.g., ARP, DHCP)
+	* Common network protocols (e.g., ARP, DHCP, DNS)
 	* Firewall configuration (ingress vs. egress policies) using utilities such as iptables and pf
 	* Active Directory environment setup and management
 	* Windows and Linux administration
@@ -53,7 +53,7 @@ Education, Certifications & Prior Experience
 
 My academic background stemmed from an undergraduate degree in computer engineering. Although this helped me gain exposure to many of the topics I had listed above, I decided to supplement this with a graduate degree in cybersecurity after spending a few years in the field. Let me be clear, although the route to my professional career took me through academic schooling, this is certainly **not** the only route. I know a slew of security professionals from varying walks of life - philosophers, physics majors, former art and theater students. Some of these bright minds decided not to pursue an official education beyond high school, and they're phenomenal at what they do. In my eyes, that's one (of many) particular aspect of this industry that makes it unique. 
 
-It is for this exact reason that this portion of the journey is completely dependent on personal preference. If you're the type that thrives in a traditional, academic environment, there are degrees (both online and on-campus) offered by several universities that can fit your needs. Conversely, if you prefer self-study and personal projects, there are more than enough resources online to facilitate that process as well. Of course, a combination of both approaches is perfectly feasible and effective as well.
+It is for this exact reason that this portion of the journey is completely dependent on personal preference. If you're the type that thrives in a traditional, academic environment, there are degrees (both online and on-campus) offered by several universities that can fit your needs. Conversely, if you prefer self-study and personal projects, there are more than enough resources online to facilitate that process. Of course, a combination of both approaches is perfectly feasible and effective as well.
 
 > <b>*Note:</b> If you decide to research potential colleges and universities for undergraduate or graduate security programs, be sure to carefully vet the curriculum. There are establishments that advertise information security or cybersecurity programs, but they may teach strictly from a management, compliance or theoretical perspective without including the technical, hands-on techniques necessary for practical execution.
 
@@ -61,7 +61,7 @@ A popular subcategory within this point of discussion is centered around certifi
 
 Lastly, the same individuals asking for my advice have consistently inquired about prior experience that may be necessary to get their foot in the door and obtain their first job in the field. The recurring theme rears its head once again - it is helpful along the way, but most definitely not required. Those same security professionals that I know (on one level or another) differ wildly in their professional experience prior to entering the infosec field. Some were system administrators or network engineers for nearly a decade before making the pivot to security. Others (myself included) do not have such experience under their belt, but have never been at a disadvantage. 
 
-Landing that initial job in infosec is only limited by your willingness to succeed and dedication to feeding an insatiable hunger for more knowledge (a LinkedIn profile helps too). As cliche as this seems, its truth is sound. This shines through when interacting with peers, perhaps discussing each other's current personal projects, and sharing a moment where you both realize your eyes are bigger than your stomach. Every now and again, I find myself looking at a stack of books on my shelf, or a bookmark folder filled with articles and GitHub repositories, and I can't help but take pride in the fact that despite my efforts, they will never be empty.
+Landing that initial job in infosec is only limited by your willingness to succeed and dedication to feeding an insatiable hunger for more knowledge (a LinkedIn profile helps too). As clich&eacute; as this seems, its truth is sound. This shines through when interacting with peers, perhaps discussing each other's current personal projects, and sharing a moment where you both realize your eyes are bigger than your stomach. This is why I will always have a stack of books on my shelf or a bookmark folder filled with articles and GitHub repositories, and despite my best efforts, they will never be empty.
 
 Dive Right In
 ------
@@ -77,7 +77,7 @@ These practice labs, applications, websites and exercises can be found in a mult
 * [Metasploitable3](https://github.com/rapid7/metasploitable3){:target="_blank"}
 * [CTF Time](https://ctftime.org/){:target="_blank"}
 
-For the latest news, tools, techniques, white papers and the like, the [netsec subreddit](https://www.reddit.com/r/netsec/){:target="_blank"} is a phenomenal and frequently updated resource.
+For the latest news, tools, techniques, white papers and the like, the [netsec subreddit](https://www.reddit.com/r/netsec/){:target="_blank"} is a phenomenal and frequently updated resource. Twitter is another bountiful option, but it may require some additional culling.
 
 Resist the Temptation
 ------
