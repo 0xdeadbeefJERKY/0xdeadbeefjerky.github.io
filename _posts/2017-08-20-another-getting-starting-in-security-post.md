@@ -1,16 +1,16 @@
 ---
 layout: post
 title:  "Another 'Getting Started in Security' Post"
-date:   2017-08-13 17:51:00 -0400
+date:   2017-08-20 22:00:00 -0400
 
 ---
 
 As stated in my ["about me"](/about) page, there have been more than a few conversations that involved someone asking me how I successfully "broke" into the information security field and, more importantly, how they could as well. Although this topic has been covered quite a bit, I felt it would be beneficial to offer my two cents to others looking to follow a similar path. However, I would **strongly** recommend you read the following posts before diving into my content:
 
-* [So, you want to work in security?](https://medium.freecodecamp.org/so-you-want-to-work-in-security-bc6c10157d23){:target="_blank"} by [Parisa Tabriz](https://twitter.com/laparisa?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5Eauthor){:target="_blank"}
-* [So you want to work in security (but are too lazy to read Parisa's excellent essay)](https://lcamtuf.blogspot.com/2016/08/so-you-want-to-work-in-security-but-are.html){:target="_blank"} by [Michal Zalewski](https://twitter.com/lcamtuf?lang=en){:target="_blank"}
-* [Answers on how to get started in Security](http://carnal0wnage.attackresearch.com/2015/05/answers-on-how-to-get-started-in.html){:target="_blank"} by [Chris Gates](https://twitter.com/carnal0wnage?lang=en){:target="_blank"}
-* [How to become a pentester](https://www.corelan.be/index.php/2015/10/13/how-to-become-a-pentester/){:target="_blank"} by [Peter Van Eeckhoutte](https://twitter.com/corelanc0d3r?ref_src=twsrc%5Egoogle%7Ctwcamp%5Eserp%7Ctwgr%5Eauthor){:target="_blank"}
+* [So, you want to work in security?](https://medium.freecodecamp.org/so-you-want-to-work-in-security-bc6c10157d23){:target="_blank"} by [Parisa Tabriz](https://twitter.com/laparisa){:target="_blank"}
+* [So you want to work in security (but are too lazy to read Parisa's excellent essay)](https://lcamtuf.blogspot.com/2016/08/so-you-want-to-work-in-security-but-are.html){:target="_blank"} by [Michal Zalewski](https://twitter.com/lcamtuf){:target="_blank"}
+* [Answers on how to get started in Security](http://carnal0wnage.attackresearch.com/2015/05/answers-on-how-to-get-started-in.html){:target="_blank"} by [Chris Gates](https://twitter.com/carnal0wnage){:target="_blank"}
+* [How to become a pentester](https://www.corelan.be/index.php/2015/10/13/how-to-become-a-pentester/){:target="_blank"} by [Peter Van Eeckhoutte](https://twitter.com/corelanc0d3r){:target="_blank"}
 
 Foundation, Foundation, Foundation 
 ------
@@ -59,7 +59,7 @@ It is for this exact reason that this portion of the journey is completely depen
 
 A popular subcategory within this point of discussion is centered around certifications. Again, I pursued this route because my personal preference is to follow a curriculum, course materials and exercises to get started in a specific area, but my advice remains the same. Official certifications, although valuable, are not a prerequisite or necessity for every aspiring (or established) security professional. Having said that, [Offensive Security](https://www.offensive-security.com/){:target="_blank"} offers a series of excellent courses for those looking to specialize in network penetration testing, exploit development, web application security and/or wireless network security. Earlier this year, I had successfully passed the [PWK](https://www.offensive-security.com/information-security-training/penetration-testing-training-kali-linux/){:target="_blank"} exam and achieved my OSCP certification, and I can say with confidence that it was a very valuable, but equally trying experience. It's now a few months later, and I've already found myself enrolled in the [CTP](https://www.offensive-security.com/information-security-training/cracking-the-perimeter/){:target="_blank"} course and pursuing my OSCE certification.
 
-Lastly, the same individuals asking for my advice have consistently inquired about prior experience that may be necessary to get their foot in the door and obtain their first job in the field. The recurring theme rears its head once again - it is helpful along the way, but most definitely not required. Those same security professionals that I know (on one level or another) differ wildly in their professional experience prior to entering the infosec field. Some were system administrators or network engineers for nearly a decade before making the pivot to security. Others (myself included) do not have such experience under their belt, but have never been at a disadvantage. 
+The same individuals asking for my advice have consistently inquired about prior experience that may be necessary to get their foot in the door and obtain their first job in the field. The recurring theme rears its head once again - it is helpful along the way, but most definitely not required. Those same security professionals that I know (on one level or another) differ wildly in their professional experience prior to entering the infosec field. Some were system administrators or network engineers for nearly a decade before making the pivot to security. Others (myself included) do not have such experience under their belt, but have never been at a disadvantage. 
 
 Landing that initial job in infosec is only limited by your willingness to succeed and dedication to feeding an insatiable hunger for more knowledge (a LinkedIn profile helps too). As clich&eacute; as this seems, its truth is sound. This shines through when interacting with peers, perhaps discussing each other's current personal projects, and sharing a moment where you both realize your eyes are bigger than your stomach. This is why I will always have a stack of books on my shelf or a bookmark folder filled with articles and GitHub repositories, and despite my best efforts, they will never be empty.
 
@@ -91,7 +91,7 @@ Lean on (and Become Part of) the Community
 
 I would not be where I am today without the aid of the infosec community. So many people have been beyond eager to share their knowledge, help others, and further the state of offensive and defensive security by challenging their peers. I implore those setting foot on the path to becoming a security professional to not only reap the benefits that the infosec community has to offer, but to pay it forward by contributing as well (after all, knowledge sharing is a two-way street). 
 
-Whether the medium is social media, attending security conferences, or sitting in on webinars, immerse yourself in other's experience. In my eyes, this is an exceptional catalyst for security professionals at any stage in their career.
+Whether the medium is social media, attending security conferences, or sitting in on webinars, immerse yourself in other's experience. In my eyes, this is an exceptional catalyst for security professionals at any stage in their career. **Do not feel intimidated or afraid to ask questions**. 
 
 Although I can write on the topic for many, many more pages, this should suffice in, at the very least, pointing a few of you in the right direction. In the spirit of this post and the infosec community at large, please do not hesitate to contact me on [Twitter](https://twitter.com/0xdeadbeefjerky){:target="_blank"} if you have any questions or you're looking for additional advice. 
 
