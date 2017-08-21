@@ -1,7 +1,7 @@
 ---
 layout: post
 title:  "Another 'Getting Started in Security' Post"
-date:   2017-08-20 22:00:00 -0400
+date:   2017-08-21 08:00:00 -0400
 
 ---
 
