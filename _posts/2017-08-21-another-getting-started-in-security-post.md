@@ -2,6 +2,7 @@
 layout: post
 title:  "Another 'Getting Started in Security' Post"
 date:   2017-08-21 08:00:00 -0400
+crosspost_to_medium: true
 
 ---
 
