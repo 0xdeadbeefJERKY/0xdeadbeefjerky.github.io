@@ -7,3 +7,10 @@ author: 0xdeadbeefJERKY
 
 gems:
   - jekyll-redirect-from
+
+jekyll-crosspost_to_medium:
+  enabled: true
+  cache: .jekyll-crosspost_to_medium
+  status: draft
+  license: all-rights-reserved
+  
