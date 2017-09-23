@@ -4,13 +4,18 @@ highlight: rouge
 title: Random Adventures Through Infosec
 description: For those breaking into the industry and seasoned veterans alike
 author: 0xdeadbeefJERKY
+twitter_username: 0xdeadbeefJERKY
 
-gems:
+plugins:
   - jekyll-redirect-from
+  - jekyll-seo-tag
+  - jekyll-sitemap
 
 jekyll-crosspost_to_medium:
   enabled: true
   cache: .jekyll-crosspost_to_medium
   status: draft
   license: all-rights-reserved
-  
+
+kramdown:
+  syntax_highlighter: rouge

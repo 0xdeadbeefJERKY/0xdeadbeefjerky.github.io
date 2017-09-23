@@ -1,10 +1,19 @@
 ---
 layout: post
 title:  "Another 'Getting Started in Security' Post"
+description: There have been more than a few conversations that involved someone asking me how I successfully 'broke' into the information security field and, more importantly, how they could as well. Although this topic has been covered quite a bit, I felt it would be beneficial to offer my two cents to others looking to follow a similar path.
 date:   2017-08-21 08:00:00 -0400
 crosspost_to_medium: true
 
 ---
+
+<title>
+   {%if page.title %}
+       {{ page.title }}
+   {% else %}
+       {{ site.title }}
+   {% endif %}
+</title>
 
 As stated in my ["about me"](/about) page, there have been more than a few conversations that involved someone asking me how I successfully "broke" into the information security field and, more importantly, how they could as well. Although this topic has been covered quite a bit, I felt it would be beneficial to offer my two cents to others looking to follow a similar path. However, I would **strongly** recommend you read the following posts before diving into my content:
 
@@ -97,3 +106,5 @@ Whether the medium is social media, attending security conferences, or sitting i
 Although I can write on the topic for many, many more pages, this should suffice in, at the very least, pointing a few of you in the right direction. In the spirit of this post and the infosec community at large, please do not hesitate to contact me on [Twitter](https://twitter.com/0xdeadbeefjerky){:target="_blank"} if you have any questions or you're looking for additional advice. 
 
 Happy \(hacking\|hunting\)!
+
+{% include share-page.html %}
