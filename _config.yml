@@ -5,6 +5,7 @@ title: Random Adventures Through Infosec
 description: For those breaking into the industry and seasoned veterans alike
 author: 0xdeadbeefJERKY
 twitter_username: 0xdeadbeefJERKY
+url: 0xdeadbeefJERKY.github.io
 
 plugins:
   - jekyll-redirect-from
