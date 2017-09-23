@@ -40,7 +40,7 @@ Issuing this command, we are greeted with the following output:
 Dust off your Aviators and throw on your jumpsuit, we're going airborne...
 
 <br>
-![impilot]({{ site.url }}/assets/images/pilot.gif){: .center-image}
+![impilot](/assets/images/pilot.gif){: .center-image}
 
 <br>
 The challenge then accepts user input and closes the connection. If the length of the input is less than four characters, it'll display a "mission failed" message. Knowing that we're able to provide attacker-controlled input, we can take a shot in the dark and guess that this program may be vulnerable to a stack buffer overflow. Digging into the cogs and gears of buffer overflows is outside the scope of this post, as there's a ton of material readily available for your consumption (including the well known ["Smashing the Stack for Fun and Profit" Phrack article](http://phrack.org/issues/49/14.html){:target="_blank"}). 
@@ -73,7 +73,7 @@ Jackpot. We've confirmed that there's at least the potential for an exploitable 
 ~~~
 
 <br>
-![pilot100AsPEDA]({{ site.url }}/assets/images/pilot100Aspeda.png){: .center-image}
+![pilot100AsPEDA](/assets/images/pilot100Aspeda.png){: .center-image}
 
 <br>
 Before going through the details of the notations I've made, let's focus on one important detail - This binary is 64-bit. How did we arrive at this conclusion? The memory addresses are 8 bytes long (e.g., 0x0000000000400b35), whereas memory addresses in 32-bit binaries/architectures are 4 bytes long. (e.g., 0x00400b35). We can further confirm this by running the 'file' utility against the local binary:
@@ -129,7 +129,7 @@ Program received signal SIGSEGV, Segmentation fault.
 ~~~
 
 <br>
-![pilotPatternPEDA]({{ site.url }}/assets/images/pilotpatternpeda.png){: .center-image}
+![pilotPatternPEDA](/assets/images/pilotpatternpeda.png){: .center-image}
 
 <br>
 Armed with the portion of the unique string that overwrites the return address, we can provide this value as input for the 'pattern_offset' utility to calculate the exact offset in our user input string/buffer:
@@ -161,13 +161,13 @@ Program received signal SIGSEGV, Segmentation fault.
 ~~~
 
 <br>
-![pilotABPEDA]({{ site.url }}/assets/images/pilotABpeda.png){: .center-image}
+![pilotABPEDA](/assets/images/pilotABpeda.png){: .center-image}
 
 <br>
 This confirms our theory. Now that we are able to cleanly overwrite the return address with a value of our choice, we need to determine what that value should be to facilitate shellcode execution. If you've been paying careful attention, you may have caught on to the fact that the value for "Location" being provided by the local binary has been static and points to the beginning of our user input stored in the RSI register (0x7fffffffe170). This works out perfectly, because we have full control over this content. 
 
 <br>
-![pilotRSIPEDA]({{ site.url }}/assets/images/pilotRSIpeda.png){: .center-image}
+![pilotRSIPEDA](/assets/images/pilotRSIpeda.png){: .center-image}
 
 <br>
 So what should we place at the beginning of our payload that would give us an advantage as an attacker? We know that the target is a 64-bit Linux (ELF) binary (as per the 'file' output), so why not provide shellcode that executes /bin/sh and drop us into a shell on the host running 'pilot'? NYU's [Offensive Security, Incident Response and Internet Security Laboratory (OSIRIS Lab)](https://osiris.cyber.nyu.edu/){:target="_blank"} was kind enough to open source an entire repository of shellcode written by NYU students. Browsing through this repository, we come across a directory containing shellcode designed to achieve our goal - [64-bit local /bin/sh](https://github.com/isislab/Shellcode/tree/master/64BitLocalBinSh){:target="_blank"}. Let's pull down this code and:
