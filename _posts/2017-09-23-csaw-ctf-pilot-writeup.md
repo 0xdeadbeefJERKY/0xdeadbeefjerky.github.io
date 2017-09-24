@@ -43,7 +43,7 @@ Dust off your Aviators and throw on your jumpsuit, we're going airborne...
 ![impilot](/assets/images/pilot.gif){: .center-image}
 
 <br>
-The challenge then accepts user input and closes the connection. If the length of the input is less than four characters, it'll display a "mission failed" message. Knowing that we're able to provide attacker-controlled input, we can take a shot in the dark and guess that this program may be vulnerable to a stack buffer overflow. Digging into the cogs and gears of buffer overflows is outside the scope of this post, as there's a ton of material readily available for your consumption (including the well known ["Smashing the Stack for Fun and Profit" Phrack article](http://phrack.org/issues/49/14.html){:target="_blank"}). 
+The challenge then accepts user input and closes the connection. If the length of the input is less than four characters, it'll display a "mission failed" message. Knowing that we're able to provide attacker-controlled input, we can take a shot in the dark and guess that this program may be vulnerable to a stack buffer overflow. Digging into the cogs and gears of buffer overflows is outside the scope of this post, as there's a ton of material readily available for your consumption (including the well known ["Smashing the Stack for Fun and Profit" Phrack article](http://phrack.org/issues/49/14.html){:target="_blank"}).
 
 In a nutshell, exploiting a stack buffer overflow allows an attacker to overwrite the return address of a function, ultimately allowing them to control the execution flow of the program. This traditionally results in jumping to a memory address that points to malicious code or code that an attacker can reuse for malicious purposes. Let's test out our theory by providing an input of one hundred "A"s. The call stack and stack frames are explained in detail on [this Wikipedia page](https://en.wikipedia.org/wiki/Call_stack){:target="_blank"} for those seeking a better understanding of how the stack is structured and used.
 
@@ -62,7 +62,7 @@ In a nutshell, exploiting a stack buffer overflow allows an attacker to overwrit
 ```
 
 <br>
-Jackpot. We've confirmed that there's at least the potential for an exploitable buffer overflow in this case, as we were successfully able to trigger a segmentation fault. This error tells us that the process is attempting to access an invalid or restricted memory address. This behavior is expected, as we overwrote the return address with a string of "A"s (0x41 in hex). Let's confirm this by leveraging the [GNU debugger (gdb)](https://www.gnu.org/software/gdb/){:target="_blank"} with the [PEDA (Python Exploit Development Assistance) plugin](https://github.com/longld/peda){:target="_blank"} installed.
+Jackpot! We've confirmed that there's at least the potential for an exploitable buffer overflow in this case, as we were successfully able to trigger a segmentation fault. This error tells us that the process is attempting to access an invalid or restricted memory address. This behavior is expected, as we overwrote the return address with a string of "A"s (0x41 in hex). Let's confirm this by leveraging the [GNU debugger (gdb)](https://www.gnu.org/software/gdb/){:target="_blank"} with the [PEDA (Python Exploit Development Assistance) plugin](https://github.com/longld/peda){:target="_blank"} installed.
 
 ~~~
 # gdb ./pilot
