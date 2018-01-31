@@ -3,7 +3,7 @@ layout: post
 title:  "The Current State of DDE"
 description: The Dynamic Data Exchange (DDE) protocol exposes functionality that allows data to be transmitted between applications/processes on Windows platforms. About two years ago, researchers discovered that this protocol could be abused in order to achieve arbitrary command and code execution, more specifically within Microsoft Office applications (e.g., Excel). Within the past few months, Microsoft issued several updates to combat these attacks. This post will address the current state of the DDE attack vector within Microsoft Office applications, taking the recent patches and security advisories from Microsoft into account.
 date:   2018-01-29 07:38:00 -0400
-crosspost_to_medium: true
+crosspost_to_medium: false
 ---
 
 <title>
@@ -14,6 +14,11 @@ crosspost_to_medium: true
    {% endif %}
 </title>
 
+Update #1 (1/29/2018)
+------
+
+Hours after the release of this post, [Matt Nelson](https://twitter.com/enigma0x3){:target="_blank"} unleashed a [new technique](https://posts.specterops.io/reviving-dde-using-onenote-and-excel-for-code-execution-d7226864caee){:target="_blank"} to bypass the latest mitigation options made available by Microsoft. As a result, attackers can embed an Excel spreadsheet within OneNote in order to completely bypass the corresponding registry key intended to block DDE functionality. Furthermore, OneNote documents downloaded from external sources (e.g., the public Internet) are (still) not sandboxed by Protected View. I’ve added another item to the roadmap for my Office DDE payload generation tool, as I intend to automate this technique as well.
+
 TL;DR
 ------
 
@@ -22,7 +27,7 @@ Microsoft pushed an update that disables DDE functionality within Word by defaul
 DDE Attacks: Origins Story
 ------
 
-The [Dynamic Data Exchange (DDE) protocol](https://msdn.microsoft.com/en-us/library/windows/desktop/ms648774(v=vs.85).aspx){:target="_blank"} exposes functionality that allows data to be transmitted and shared between applications/processes on Windows platforms. About two years ago, [Jerome Smith](https://twitter.com/exploresecurity){:target="_blank"} delivered a [presentation at CamSec](https://www.slideshare.net/exploresecurity/camsec-sept-2016-tricks-to-improve-web-app-excel-export-attacks){:target="_blank"} detailing a technique that abused DDE in Excel to achieve arbitrary command and code execution. This served as a catalyst for subsequent offensive research led by many, including [Saif Sherei](https://twitter.com/Saif_Sherei){:target="_blank"}, [Etienne Stalmans](https://twitter.com/_staaldraad){:target="_blank"}, [Kevin Beaumont](https://twitter.com/gossithedog){:target="_blank"}, [Ryan Hanson](https://twitter.com/ryhanson){:target="_blank"}, and [Mike Czumak](https://twitter.com/securitysift){:target="_blank"}. As a result, similar techniques abusing the DDE protocol were crafted for other applications within the Microsoft Office product line, specifically, Word and Outlook. Shortly after this research was publicized, malware samples and phishing documents surfaced "in the wild" that leveraged these techniques. The following posts cover these DDE attacks:
+The [Dynamic Data Exchange (DDE) protocol](https://msdn.microsoft.com/en-us/library/windows/desktop/ms648774(v=vs.85).aspx){:target="_blank"} exposes functionality that allows data to be transmitted and shared between applications/processes on Windows platforms.  Back in 2014, [James Kettle](https://twitter.com/albinowax){:target="_blank"} and [Rohan Durve](https://twitter.com/decode141){:target="_blank"} released [a blog post](https://www.contextis.com/blog/comma-separated-vulnerabilities){:target="_blank"} describing the formula injection technique affecting Microsoft Excel, which can be abused in order to achieve arbitrary command execution by way of the DDE protocol. About two years later, [Jerome Smith](https://twitter.com/exploresecurity){:target="_blank"} delivered a [presentation at CamSec](https://www.slideshare.net/exploresecurity/camsec-sept-2016-tricks-to-improve-web-app-excel-export-attacks){:target="_blank"} detailing a technique that abused DDE in Excel to achieve arbitrary command and code execution. This served as a catalyst for subsequent offensive research led by many, including [Saif Sherei](https://twitter.com/Saif_Sherei){:target="_blank"}, [Etienne Stalmans](https://twitter.com/_staaldraad){:target="_blank"}, [Kevin Beaumont](https://twitter.com/gossithedog){:target="_blank"}, [Ryan Hanson](https://twitter.com/ryhanson){:target="_blank"}, and [Mike Czumak](https://twitter.com/securitysift){:target="_blank"}. As a result, similar techniques abusing the DDE protocol were crafted for other applications within the Microsoft Office product line, specifically, Word and Outlook. Shortly after this research was publicized, malware samples and phishing documents surfaced "in the wild" that leveraged these techniques. The following posts cover these DDE attacks:
 
 - [https://sensepost.com/blog/2016/powershell-c-sharp-and-dde-the-power-within/](https://sensepost.com/blog/2016/powershell-c-sharp-and-dde-the-power-within/){:target="_blank"}
 - [https://sensepost.com/blog/2017/macro-less-code-exec-in-msword](https://sensepost.com/blog/2017/macro-less-code-exec-in-msword/){:target="_blank"}
