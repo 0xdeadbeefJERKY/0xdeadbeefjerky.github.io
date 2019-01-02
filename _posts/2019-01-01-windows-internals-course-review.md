@@ -20,11 +20,11 @@ Quite frankly, this training is for anyone **but** those looking to skim materia
 > Note that this training isn't tailored *only* for security professionals. Some of the attendees were system administrators, Windows developers, etc.
 
 ## Credit Where Credit is Due
-A thousand thanks to [Pavel Yosifovich](https://twitter.com/zodiacon) for authoring the content for this training and delivering it to myself and my fellow attendees during unsavory hours to accommodate our respective time zones.
+A thousand thanks to [Pavel Yosifovich](https://twitter.com/zodiacon){:target="_blank"} for authoring the content for this training and delivering it to myself and my fellow attendees during unsavory hours to accommodate our respective time zones.
 
 ## The Who
 ### Your Guide
-Pavel Yosifovich literally rewrote and updated the book on Windows Internals (alongside [Alex Ionescu](https://twitter.com/aionescu), credit to original authors [Mark Russinovich](https://twitter.com/markrussinovich) and David A. Solomon as well) to cover material specific to the releases of Windows 8, Windows 8.1 and Windows 10. You couldn't be in better hands but if you're still skeptical, check out his [blog](http://blogs.microsoft.co.il/pavely/) and [GitHub repos](https://github.com/zodiacon?tab=repositories).
+Pavel Yosifovich literally rewrote and updated the book on Windows Internals (alongside [Alex Ionescu](https://twitter.com/aionescu){:target="_blank"}, credit to original authors [Mark Russinovich](https://twitter.com/markrussinovich){:target="_blank"} and David A. Solomon as well) to cover material specific to the releases of Windows 8, Windows 8.1 and Windows 10. You couldn't be in better hands but if you're still skeptical, check out his [blog](http://blogs.microsoft.co.il/pavely/){:target="_blank"} and [GitHub repos](https://github.com/zodiacon?tab=repositories){:target="_blank"}.
 
 ### Who Should Take This Training?
 Offensive and defensive information security professionals interested in Windows security will benefit greatly from this course. Crafting a detailed and in-depth understanding of both Microsoft's security model as well as the architectural designs and operations of the Windows operating system empower security folks with the ability to effectively attack and defend Windows endpoints. If you're currently in or aspire to be in one (or more) of the following roles, put this training at the top of your list:
@@ -36,7 +36,7 @@ Offensive and defensive information security professionals interested in Windows
 * Anything involving monitoring, detection and/or response capabilities specific to Windows
 
 ## The What
-Pavel's [Windows Internals training](https://scorpiosoftware.net/2018/08/17/public-remote-windows-internals-training/) traverses the content within the [Windows Internals Part 1 (7th edition) book](https://www.amazon.com/Windows-Internals-Part-architecture-management/dp/0735684189) in great detail across five days, covering the following eight topics:
+Pavel's [Windows Internals training](https://scorpiosoftware.net/2018/08/17/public-remote-windows-internals-training/){:target="_blank"} traverses the content within the [Windows Internals Part 1 (7th edition) book](https://www.amazon.com/Windows-Internals-Part-architecture-management/dp/0735684189){:target="_blank"} in great detail across five days, covering the following eight topics:
 
 1. System Architecture
 2. Processes and Jobs
