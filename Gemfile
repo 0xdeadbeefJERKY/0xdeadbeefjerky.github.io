@@ -8,3 +8,4 @@ require 'open-uri'
 gem 'github-pages'
 gem 'jekyll-redirect-from'
 gem 'jekyll-seo-tag'
+gem "webrick", "~> 1.7"
