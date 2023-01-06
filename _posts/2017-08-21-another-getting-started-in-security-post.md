@@ -1,19 +1,11 @@
 ---
-layout: post
 title:  "Another 'Getting Started in Security' Post"
 description: There have been more than a few conversations that involved someone asking me how I successfully 'broke' into the information security field and, more importantly, how they could as well. Although this topic has been covered quite a bit, I felt it would be beneficial to offer my two cents to others looking to follow a similar path.
 date:   2017-08-21 08:00:00 -0400
-crosspost_to_medium: true
-
+categories: [Career Advice] 
+tags: [getting started, career advice]
+toc: true
 ---
-
-<title>
-   {%if page.title %}
-       {{ page.title }}
-   {% else %}
-       {{ site.title }}
-   {% endif %}
-</title>
 
 As stated in my ["about me"](/about) page, there have been more than a few conversations that involved someone asking me how I successfully "broke" into the information security field and, more importantly, how they could as well. Although this topic has been covered quite a bit, I felt it would be beneficial to offer my two cents to others looking to follow a similar path. However, I would **strongly** recommend you read the following posts before diving into my content:
 
@@ -65,7 +57,8 @@ My academic background stemmed from an undergraduate degree in computer engineer
 
 It is for this exact reason that this portion of the journey is completely dependent on personal preference. If you're the type that thrives in a traditional, academic environment, there are degrees (both online and on-campus) offered by several universities that can fit your needs. Conversely, if you prefer self-study and personal projects, there are more than enough resources online to facilitate that process. Of course, a combination of both approaches is perfectly feasible and effective as well.
 
-> <b>*Note:</b> If you decide to research potential colleges and universities for undergraduate or graduate security programs, be sure to carefully vet the curriculum. There are establishments that advertise information security or cybersecurity programs, but they may teach strictly from a management, compliance or theoretical perspective without including the technical, hands-on techniques necessary for practical execution.
+> If you decide to research potential colleges and universities for undergraduate or graduate security programs, be sure to carefully vet the curriculum. There are establishments that advertise information security or cybersecurity programs, but they may teach strictly from a management, compliance or theoretical perspective without including the technical, hands-on techniques necessary for practical execution.
+{: .prompt-tip }
 
 A popular subcategory within this point of discussion is centered around certifications. Again, I pursued this route because my personal preference is to follow a curriculum, course materials and exercises to get started in a specific area, but my advice remains the same. Official certifications, although valuable, are not a prerequisite or necessity for every aspiring (or established) security professional. Having said that, [Offensive Security](https://www.offensive-security.com/){:target="_blank"} offers a series of excellent courses for those looking to specialize in network penetration testing, exploit development, web application security and/or wireless network security. Earlier this year, I had successfully passed the [PWK](https://www.offensive-security.com/information-security-training/penetration-testing-training-kali-linux/){:target="_blank"} exam and achieved my OSCP certification, and I can say with confidence that it was a very valuable, but equally trying experience. It's now a few months later, and I've already found myself enrolled in the [CTP](https://www.offensive-security.com/information-security-training/cracking-the-perimeter/){:target="_blank"} course and pursuing my OSCE certification.
 
@@ -106,5 +99,3 @@ Whether the medium is social media, attending security conferences, or sitting i
 Although I can write on the topic for many, many more pages, this should suffice in, at the very least, pointing a few of you in the right direction. In the spirit of this post and the infosec community at large, please do not hesitate to contact me on [Twitter](https://twitter.com/0xdeadbeefjerky){:target="_blank"} if you have any questions or you're looking for additional advice. 
 
 Happy \(hacking\|hunting\)!
-
-{% include share-page.html %}
