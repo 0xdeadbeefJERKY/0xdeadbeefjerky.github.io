@@ -1,23 +1,17 @@
 ---
-layout: post
 title:  "Windows Internals Course Review"
 description: This post describes my experience in taking the Windows Internals course offered by Pavel Yosifovich and how it has boosted my capabilities as an offensive security researcher and red teamer.
 date:   2019-01-01 22:30:00 -0400
-crosspost_to_medium: false
+categories: [Training, Windows Internals] 
+tags: [windows, internals, training]
+toc: true
 ---
-
-<title>
-   {%if page.title %}
-       {{ page.title }}
-   {% else %}
-       {{ site.title }}
-   {% endif %}
-</title>
 
 ## TL;DR
 Quite frankly, this training is for anyone **but** those looking to skim material with a brief TL;DR section. Rather, it caters best to security professionals looking to roll up their sleeves and dive deep into the cogs and gears of the Windows operating system. If you fit this description, read on closely and carefully. 
 
-> Note that this training isn't tailored *only* for security professionals. Some of the attendees were system administrators, Windows developers, etc.
+> This training isn't tailored *only* for security professionals. Some of the attendees were system administrators, Windows developers, etc.
+{: .prompt-tip }
 
 ## Credit Where Credit is Due
 A thousand thanks to [Pavel Yosifovich](https://twitter.com/zodiacon){:target="_blank"} for authoring the content for this training and delivering it to myself and my fellow attendees during unsavory hours to accommodate our respective time zones.
@@ -73,5 +67,3 @@ Modern exploitation on Windows (both in userland and kernel space), especially w
 As always, feel free to reach out via [Twitter](https://twitter.com/0xdeadbeefJERKY){:target="_blank"} with any questions/comments.
 
 Happy (hacking\|hunting)!
-
-{% include share-page.html %}
