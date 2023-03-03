@@ -1,7 +1,9 @@
 ---
 title:  "CloudGoat Vulnerable Lambda Scenario - Part 1 (Attack)"
-description: 
-date: 2023-02-20 23:52:49-05:00
+description: > 
+    An in-depth walkthrough covering how to both attack and defend CloudGoat's 
+    vulnerable lambda challenge.
+date: 2023-03-03 00:55:43-05:00
 categories: [Cloud, AWS] 
 tags: [aws, cloud, lab, walkthrough]
 toc: true
@@ -26,7 +28,7 @@ and there are a number of "unofficial" walk-throughs available in the form of
 blog posts. However, these walk-throughs focus solely on successfully exploiting
 the relevant vulnerabilities. My intention with this series is to go one (or 
 two) steps further by showing you how to defend against these attack techniques.
-This includes both authoring detections and implementing preventative measures. 
+This includes detecting, responding to and preventing the attack technique. 
 First things first, let's step through the [vulnerable_lambda scenario](https://github.com/RhinoSecurityLabs/cloudgoat/tree/master/scenarios/vulnerable_lambda) 
 with one minor modification. We'll assume the role of an attacker who has 
 (somehow) compromised this access key without any additional context (e.g., the 
@@ -43,46 +45,31 @@ through how I set up my configuration. Ensure you've satisfied the
 [documented requirements](https://github.com/RhinoSecurityLabs/cloudgoat#requirements) 
 before following along.
 
-### Create Python Virtual Environment
+These days, I'm particularly biased towards avoiding dependency conflicts and 
+maintaining clean and self-contained development environments. To that end, I 
+highly recommend leveraging tools such as `venv` and [pyenv](https://github.com/pyenv/pyenv) to manage Python 
+dependencies, or Earthly and/or Docker (e.g., in the form of VSCode 
+Dev Containers). 
 
-> If you are particularly opinionated about how you configure your environment 
-> to use Python and/or Terraform, feel free to skip this section.
-{: .prompt-info }
-
-Avoid dependency conflicts by isolating them on a per-project basis with `venv` 
-or something similar (e.g., [pyenv](https://github.com/pyenv/pyenv)). Once the 
-virtual environment is created, drop into the environment and install 
-CloudGoat's dependencies:  
-
-```bash
-git clone https://github.com/RhinoSecurityLabs/cloudgoat.git
-cd cloudgoat
-python -m pip install venv
-python -m venv .venv
-source .venv/bin/activate
-python -m pip install -r requirements.txt
-```
-
-### Dedicated IAM Role for CloudGoat Terraform Execution
-
-When using the AWS CLI, I prefer to leverage [`aws-vault`](https://github.com/99designs/aws-vault)
+Additionally, When using the AWS CLI, I prefer to leverage [`aws-vault`](https://github.com/99designs/aws-vault)
 to manage credentials. Ultimately, `aws-vault` uses the OS secure keystore to 
 lock down access to these credentials and makes the necessary AWS STS API calls 
 to generate temporary credentials for access. This approach prevents AWS 
 credentials from being stored in plaintext on the local filesystem.
 
+### Dedicated IAM Role for CloudGoat Terraform Execution
+
 ~~In an ideal world, there would be a programmatic way to craft an IAM policy for this Terraform role, but I haven't discovered one that is officially supported and simple to use (e.g., anything that's not running `terraform apply` and playing whack-a-mole with AWS API error messages).~~
 
 [Ian McKay](https://twitter.com/iann0036) to the rescue! We can utilize [iamlive](https://github.com/iann0036/iamlive) 
 to dynamically build an IAM policy for the Terraform role that strictly 
-abides by the principle of least privilege. [This blog post](https://meirg.co.il/2021/04/23/determining-aws-iam-policies-according-to-terraform-and-aws-cli/) 
-covers the process of setting up `iamlive` as a Docker container, configuring 
-the appropriate environment variables to pass HTTP/HTTPS traffic to its proxy, 
-and collect the generated IAM policy for use. In order to generate the 
-appropriate IAM policy for each CloudGoat scenario, you'll need to copy the 
-`terraform` directory to a new directory and following the steps outlined by the
-referenced blog post. Alternatively, the IAM policy we're after below can be 
-found below!   
+abides by the principle of least privilege. [This blog post](https://blog.symops.com/2022/05/06/least-privilege-policies-from-aws-logs/) 
+by [Adam Buggia](https://twitter.com/abuggia) covers the process of setting up 
+iamlive with [localstack](https://localstack.cloud/) to generate the necessary 
+IAM policy without ever touching your AWS account! For each CloudGoat scenario, 
+you'll need to copy the `terraform` directory to a new directory (e.g., `/tmp`) 
+and following the steps outlined by the referenced blog post. Alternatively, you 
+can find the IAM policy we're after below!   
 
 ```json
 {
@@ -91,45 +78,41 @@ found below!
         {
             "Effect": "Allow",
             "Action": [
-                "sts:GetCallerIdentity",
+                "iam:GetUser",
+                "iam:GetUserPolicy",
+                "iam:ListAccessKeys",
+                "iam:GetRole",
+                "lambda:GetFunction",
+                "iam:CreateUser",
+                "iam:CreateAccessKey",
+                "iam:PutUserPolicy",
+                "iam:CreateRole",
+                "iam:PutRolePolicy",
+                "iam:ListRolePolicies",
+                "iam:GetRolePolicy",
+                "iam:ListAttachedRolePolicies",
                 "secretsmanager:CreateSecret",
                 "secretsmanager:DescribeSecret",
                 "secretsmanager:GetResourcePolicy",
                 "secretsmanager:PutSecretValue",
                 "secretsmanager:GetSecretValue",
-                "secretsmanager:DeleteSecret",
-                "secretsmanager:TagResource",
-                "iam:CreateUser",
-                "iam:GetUser",
-                "iam:CreateAccessKey",
-                "iam:PutUserPolicy",
-                "iam:CreateRole",
-                "iam:PutRolePolicy",
-                "iam:GetRole",
-                "iam:ListRolePolicies",
-                "iam:GetRolePolicy",
-                "iam:ListAttachedRolePolicies",
-                "iam:ListAttachedUserPolicies",
+                "lambda:CreateFunction",
                 "iam:PassRole",
-                "iam:GetUserPolicy",
-                "iam:ListAccessKeys",
+                "lambda:ListVersionsByFunction",
+                "lambda:GetFunctionCodeSigningConfig",
                 "iam:DeleteUserPolicy",
-                "iam:DetachUserPolicy",
-                "iam:ListInstanceProfilesForRole",
                 "iam:DeleteAccessKey",
+                "iam:ListInstanceProfilesForRole",
+                "secretsmanager:DeleteSecret",
                 "iam:DeleteRolePolicy",
                 "iam:DeleteRole",
+                "lambda:DeleteFunction",
                 "iam:ListGroupsForUser",
                 "iam:DeleteUser",
                 "iam:TagUser",
                 "iam:TagRole",
-                "iam:UpdateUser",
-                "lambda:CreateFunction",
-                "lambda:GetFunction",
-                "lambda:ListVersionsByFunction",
-                "lambda:GetFunctionCodeSigningConfig",
-                "lambda:DeleteFunction",
-                "lambda:TagResource"
+                "lambda:TagResource",
+                "secretsmanager:TagResource"
             ],
             "Resource": "*"
         }
@@ -751,7 +734,7 @@ cloudfox aws permissions --principal arn:aws:iam::REDACTED:role/vulnerable_lambd
 
 cloudfox was kind enough to print out the AWS CLI commands necessary to download
 the function code. We simply need to make some minor tweaks for it to work 
-properly (especially with aws-vault).  
+properly (especially with `aws-vault`).  
 
 ```bash
 cat cloudfox-output/aws/REDACTED/loot/lambda-get-function-commands.txt
