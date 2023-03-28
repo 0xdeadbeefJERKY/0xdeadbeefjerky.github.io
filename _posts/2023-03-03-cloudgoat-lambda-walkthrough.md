@@ -366,7 +366,7 @@ Now that we can assume this role from the CLI, our next task is to list all
 Lambda functions.
 
 ```bash
-aws lambda list-functions --us-east-1
+aws lambda list-functions --region us-east-1
 ```
 
 ```json
