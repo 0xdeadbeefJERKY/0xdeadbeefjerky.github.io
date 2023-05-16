@@ -9,6 +9,8 @@ tags: [aws, cloud, lab, walkthrough, lambda, response]
 toc: true
 ---
 
+![cloudgoat](/assets/img/responders.png){: .center-image}
+
 * [Part 1](https://0xdeadbeefjerky.com/posts/cloudgoat-lambda-walkthrough/) - 
 Attacking CloudGoat's vulnerable Lambda scenario
 * Part 2 (you are here) - Responding to the attack
@@ -83,7 +85,7 @@ replace the S3 bucket URI with the appropriate value pointing to your CloudTrail
 data. This will create a new table within the selected database and populate it 
 with the appropriate CloudTrail data stored in the provided S3 bucket. 
 Furthermore, the table will be automatically partitioned using the timestamp 
-portion of the path (S3 key). 
+portion of the path (S3 object key). 
 
     ```sql
     CREATE EXTERNAL TABLE cloudtrail_logs_pp(
@@ -145,7 +147,7 @@ portion of the path (S3 key).
       STORED AS INPUTFORMAT 'com.amazon.emr.cloudtrail.CloudTrailInputFormat'
       OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
       LOCATION
-        's3://bucket-name/AWSLogs/accountId/CloudTrail/us-east-1'
+        's3://bucket-name/AWSLogs/accountId/CloudTrail/region' --replace this with actual S3 bucket URI
       TBLPROPERTIES (
         'projection.enabled'='true', 
         'projection.timestamp.format'='yyyy/MM/dd', 
@@ -153,7 +155,7 @@ portion of the path (S3 key).
         'projection.timestamp.interval.unit'='DAYS', 
         'projection.timestamp.range'='2023/03/28,NOW', 
         'projection.timestamp.type'='date', 
-        'storage.location.template'='s3://bucket-name/AWSLogs/accountId/CloudTrail/us-east-1/${timestamp}')
+        'storage.location.template'='s3://bucket-name/AWSLogs/accountId/CloudTrail/region/${timestamp}') --replace this with actual S3 bucket URI
     ```
 
 > **NOTE:** The CloudTrail "Event history" section in the console has a "Create 
@@ -176,13 +178,13 @@ and json_extract_scalar(requestparameters, '$.secretId') = 'vulnerable_lambda_cg
 
 Review the results, with specific focus on the `useridentity` attribute:  
 
-| eventtime |	useridentity |	eventsource |	eventname |	awsregion |	sourceipaddress |	useragent |	requestparameters |	tlsdetails |
+| useridentity |	eventtime |	eventsource |	eventname |	awsregion |	sourceipaddress |	useragent |	requestparameters |	tlsdetails |
 |--------------|--------------|-------------|-------------|-----------|-----------------|-------------|-------------------|------------|
 | {type=IAMUser, principalid=AIDAREDACTED, arn=arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgid13u1qpdipe, accountid=REDACTED, invokedby=null, accesskeyid=AKIAREDACTED, username=cg-bilbo-vulnerable_lambda_cgid13u1qpdipe, sessioncontext=null} |	2023-03-28T17:18:59Z |	secretsmanager.amazonaws.com |	GetSecretValue	| us-east-1 |	1.2.3.4 |	aws-cli/2.9.1 Python/3.9.11 Linux/5.15.90.1-microsoft-standard-WSL2 exe/x86_64.ubuntu.22 prompt/off command/secretsmanager.get-secret-value	| {"secretId":"vulnerable_lambda_cgid13u1qpdipe-final_flag"}	| {tlsversion=TLSv1.2, ciphersuite=ECDHE-RSA-AES128-GCM-SHA256, clientprovidedhostheader=secretsmanager.us-east-1.amazonaws.com} |
 
 We've discovered the offending principal is an IAM user prepended with 
 "cg-bilbo". Let's determine what else this particular user has done from this 
-particular IP address:  
+particular IP address by pivoting on the corresponding access key:  
 
 ```sql
 select eventtime, sourceipaddress, useridentity.username, eventsource, eventname
@@ -211,10 +213,10 @@ and sourceipaddress = '1.2.3.4'
 | 2023-03-28T17:18:59Z |	1.2.3.4 |	cg-bilbo-vulnerable_lambda_cgid13u1qpdipe	| secretsmanager.amazonaws.com |	GetSecretValue |
 
 The initial set of API calls leading up to the call to `AssumeRole` are 
-interesting, as they appear to be potential reconnaissance. To confirm this 
-suspicion, let's dig into the request parameters. It'd be quite strange for a 
-legitimate user to issue a flurry of queries trying to determine what 
-permissions they had, no?
+interesting, as they appear to be potential reconnaissance (series of `Get*` and
+`List*` requests). To confirm this suspicion, let's dig into the request 
+parameters. It'd be quite strange for a legitimate user to issue a flurry of 
+queries trying to determine what permissions they had, no?
 
 ```sql
 select eventtime, eventname, requestparameters, responseelements
@@ -243,12 +245,12 @@ order by eventtime
 | 2023-03-28T17:18:38Z |	ListSecrets | | |
 | 2023-03-28T17:18:59Z |	GetSecretValue | {"secretId":"vulnerable_lambda_cgid13u1qpdipe-final_flag"}	| |
 
-Shockingly, our suspicion was correct. According to the `requestparameters`, the
-user was issuing various List/Get AWS API calls targeting the very IAM user they
-used to issue the request. This is a very common form of discovery (more 
-specifically, situational awareness) when a cloud account has been compromised. 
-Let's determine which IAM roles the user was able to assume, and what subsequent 
-actions they were able to perform.
+Shockingly, our suspicion was correct! According to the `requestparameters`, the
+user was targeting the very IAM user they used to issue the request. This is a 
+very common form of discovery (more specifically, situational awareness) when a 
+cloud account has been compromised. Let's determine which IAM roles the user was
+able to assume, and what subsequent actions they were able to perform using that
+role.
 
 ```sql
 select eventtime, eventname, requestparameters, responseelements
@@ -268,7 +270,7 @@ order by eventtime
 
 The `AssumeRole` operation leverages the STS service to generate a temporary set 
 of credentials with the same permissions as the target role to be assumed. We 
-can further pivot on this access key (starting with 'ASIA') to identify the 
+can further pivot on these access keys (starting with 'ASIA') to identify the 
 subsequent activity carried out using these temporary credentials.  
 
 ```sql
@@ -288,11 +290,12 @@ order by eventtime
 ### Investigate Lambda Function Logs Using CloudWatch
 
 It appears the attacker listed the available Lambda functions and used the call
-to `GetFunctions` to pull more detailed information about a specific function, 
-which includes a direct link to the actual function code. Although CloudTrail 
-doesn't log the specifics of the function invocation, we can tap into the 
-associated CloudWatch log group (which is automatically created along with the
-Lambda function) to achieve this.  
+to `GetFunctions` to pull more detailed information about the 
+`vulnerable_lambda_cgid13u1qpdipe-policy_applier_lambda1` Lambda function, which
+includes a direct link to the actual function code. Although CloudTrail doesn't 
+log the specifics of the function invocation, we can tap into the associated 
+CloudWatch log group (which is automatically created along with the Lambda 
+function) to achieve this.  
 
 1. Navigate to CloudWatch in the console
 
@@ -333,7 +336,11 @@ and timestamp = '2023/03/28'
 Two interesting things to note here:  
 1. The source IP address differs from the previous requests because this API 
 call originated from a Lambda function, which runs within internal AWS 
-infrastructure; and
+infrastructure
+```bash
+$ dig +short -x 44.200.244.86
+ec2-44-200-244-86.compute-1.amazonaws.com.
+```
 2. The identity making this API call is a new IAM role that is attached to the 
 Lambda function as its execution role 
 (`vulnerable_lambda_cgid13u1qpdipe-policy_applier_lambda1`). 
@@ -362,6 +369,26 @@ and from_iso8601_timestamp(eventtime) >  from_iso8601_timestamp('2023-03-28T17:0
 We have to move quickly. The attacker has administrative access to the affected
 AWS account, and they've already extracted one of the company's secrets from 
 Secrets Manager. 
+
+> In almost every situation, [IAM users should not be used](https://docs.aws.amazon.com/IAM/latest/UserGuide/best-practices.html). 
+> However, it is worth the effort to identify the owner of the user and confirm 
+> whether or not it is being used in production. If it is, this portion of the 
+> response playbook will change a bit, as you'll need to carefully create and 
+> distribute a new access key for the IAM user before deactivating the 
+> compromised key, so as not to cause any unnecessary downtime.
+{: .prompt-danger }
+
+### Quarantine the IAM User
+
+In order to prevent the attacker from causing any further damage by using this 
+IAM user, we must delete all existing access keys (disabling is not an option 
+because disabled access keys [can be re-enabled](https://docs.aws.amazon.com/IAM/latest/APIReference/API_UpdateAccessKey.html))
+and detaching all IAM policies (both managed and user-defined/inline). 
+Additionally, we must comb through the CloudTrail logs in search for any 
+attempts to persist or escalate privileges by creating new IAM resources, 
+modifying existing ones, use of alternate methods of authentication, etc. We've
+already conducted this search, but here are some common API calls to look for:  
+* 
 
 ## How can we detect this?
 
