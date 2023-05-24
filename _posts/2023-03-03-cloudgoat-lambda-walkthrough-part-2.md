@@ -9,11 +9,11 @@ tags: [aws, cloud, lab, walkthrough, lambda, response]
 toc: true
 ---
 
-![cloudgoat](/assets/img/responders.png){: .center-image}
-
 * [Part 1](https://0xdeadbeefjerky.com/posts/cloudgoat-lambda-walkthrough/) - 
 Attacking CloudGoat's vulnerable Lambda scenario
 * Part 2 (you are here) - Responding to the attack
+
+![cloudgoat](/assets/img/responders.png){: .center-image}
 
 In [part one](https://0xdeadbeefjerky.com/posts/cloudgoat-lambda-walkthrough/) 
 of this series, we walked through the steps necessary to exploit a Lambda 
@@ -41,14 +41,15 @@ Secrets Manager
 
 Let's assume the worst case scenario, in which the initial alert points to a 
 user accessing the `final_flag` secret from a suspicious IP address (one that 
-isn't owned or managed by the organization). This could be in the form of a 
-[GuardDuty IAM finding](https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_finding-types-iam.html#credentialaccess-iam-anomalousbehavior),
+isn't owned/managed by the organization or hasn't been previously observed). 
+This could be in the form of a [GuardDuty IAM finding](https://docs.aws.amazon.com/guardduty/latest/ug/guardduty_finding-types-iam.html#credentialaccess-iam-anomalousbehavior),
 a custom detection, an alert from a third-party solution, etc. In any case, this
 is what we're given:  
 
 > The secret "vulnerable_lambda_cgid13u1qpdipe-final_flag" was accessed using 
 > AWS Secrets Manager by a suspicious IP address (1.2.3.4) at 
 > 2023-03-28T17:18:59Z.
+{: .prompt-danger }
 
 ## Building Context
 
@@ -70,93 +71,142 @@ etc. Because we're dedicated to the theme of using native AWS services and
 tooling when possible, we'll [query CloudTrail logs using Athena](https://docs.aws.amazon.com/athena/latest/ug/cloudtrail-logs.html) 
 for this purpose.
 
-1. Navigate to Athena in the AWS console
+Execute the following bash script by passing the necessary arguments.
 
-2. Choose the "Administration > Workgroups" sub-menu and click "Create 
-Workgroup" to create an Athena workgroup dedicated to this specific 
-investigation. Optionally, specify the S3 bucket to which Athena query results 
-will be saved.
+```bash
+# setup-investigation.sh
+#!/bin/bash
 
-3. Navigate to the "Query editor" and switch to the newly created workgroup 
-using the dropdown menu in the top-right.
+# Example: 
+# ./setup-investigation.sh -r us-east-1 -b example-bucket-123 \
+#   -w test-workgroup -o example-athena-output-bucket-456 -d "this is a test" \
+#   -n cloudtrail_logs_test -t "2023/03/01"
 
-4. In the new query editor, copy and paste the following SQL statement and 
-replace the S3 bucket URI with the appropriate value pointing to your CloudTrail
-data. This will create a new table within the selected database and populate it 
-with the appropriate CloudTrail data stored in the provided S3 bucket. 
-Furthermore, the table will be automatically partitioned using the timestamp 
-portion of the path (S3 object key). 
+# Parse command-line arguments
+while getopts ":r:b:w:o:d:n:t:" opt; do
+  case ${opt} in
+    r) AWS_REGION=$OPTARG;;
+    b) S3_BUCKET_NAME=$OPTARG;;
+    w) ATHENA_WORKGROUP_NAME=$OPTARG;;
+    o) ATHENA_OUTPUT_LOCATION=$OPTARG;;
+    d) ATHENA_WORKGROUP_DESCRIPTION=$OPTARG;;
+    n) ATHENA_TABLE_NAME=$OPTARG;;
+    t) START_TIMESTAMP=$OPTARG;;
+    \?)
+      echo "Invalid option: -$OPTARG" >&2
+      exit 1
+      ;;
+    :)
+      echo "Option -$OPTARG requires an argument." >&2
+      exit 1
+      ;;
+  esac
+done
 
-    ```sql
-    CREATE EXTERNAL TABLE cloudtrail_logs_pp(
-      eventVersion STRING,
-      userIdentity STRUCT<
-          type: STRING,
-          principalId: STRING,
-          arn: STRING,
-          accountId: STRING,
-          invokedBy: STRING,
-          accessKeyId: STRING,
-          userName: STRING,
-          sessionContext: STRUCT<
-              attributes: STRUCT<
-                  mfaAuthenticated: STRING,
-                  creationDate: STRING>,
-              sessionIssuer: STRUCT<
-                  type: STRING,
-                  principalId: STRING,
-                  arn: STRING,
-                  accountId: STRING,
-                  userName: STRING>,
-              ec2RoleDelivery:string,
-              webIdFederationData:map<string,string>
-              >
-          >,
-          eventTime STRING,
-          eventSource STRING,
-          eventName STRING,
-          awsRegion STRING,
-          sourceIpAddress STRING,
-          userAgent STRING,
-          errorCode STRING,
-          errorMessage STRING,
-          requestparameters STRING,
-          responseelements STRING,
-          additionaleventdata STRING,
-          requestId STRING,
-          eventId STRING,
-          readOnly STRING,
-          resources ARRAY<STRUCT<
-              arn: STRING,
-              accountId: STRING,
-              type: STRING>>,
-          eventType STRING,
-          apiVersion STRING,
-          recipientAccountId STRING,
-          serviceEventDetails STRING,
-          sharedEventID STRING,
-          vpcendpointid STRING,
-          tlsDetails struct<
-              tlsVersion:string,
-              cipherSuite:string,
-              clientProvidedHostHeader:string>
-        )
-      PARTITIONED BY (
-        `timestamp` string)
-      ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe'
-      STORED AS INPUTFORMAT 'com.amazon.emr.cloudtrail.CloudTrailInputFormat'
-      OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
-      LOCATION
-        's3://bucket-name/AWSLogs/accountId/CloudTrail/region' --replace this with actual S3 bucket URI
-      TBLPROPERTIES (
-        'projection.enabled'='true', 
-        'projection.timestamp.format'='yyyy/MM/dd', 
-        'projection.timestamp.interval'='1', 
-        'projection.timestamp.interval.unit'='DAYS', 
-        'projection.timestamp.range'='2023/03/28,NOW', 
-        'projection.timestamp.type'='date', 
-        'storage.location.template'='s3://bucket-name/AWSLogs/accountId/CloudTrail/region/${timestamp}') --replace this with actual S3 bucket URI
-    ```
+# Check if all required arguments are provided
+if [ -z "$AWS_REGION" ] || [ -z "$S3_BUCKET_NAME" ] || [ -z "$ATHENA_WORKGROUP_NAME" ] || [ -z "$ATHENA_OUTPUT_LOCATION" ] || [ -z "$ATHENA_WORKGROUP_DESCRIPTION" ] || [ -z "$START_TIMESTAMP" ] || [ -z "$ATHENA_TABLE_NAME" ]; then
+  echo "Usage: $0 -r <AWS_REGION> -b <S3_BUCKET_NAME> -w <ATHENA_WORKGROUP_NAME> -o <ATHENA_OUTPUT_LOCATION> -t <START_TIMESTAMP> -d <ATHENA_WORKGROUP_DESCRIPTION> -n <ATHENA_TABLE_NAME>"
+  exit 1
+fi
+
+# Fetch current AWS account ID
+ACCOUNT_ID=`aws sts get-caller-identity --query 'Account' --output text`
+
+CREATE_TABLE_QUERY=$(cat <<EOF
+  CREATE EXTERNAL TABLE $ATHENA_TABLE_NAME(
+    eventVersion STRING,
+    userIdentity STRUCT<
+        type: STRING,
+        principalId: STRING,
+        arn: STRING,
+        accountId: STRING,
+        invokedBy: STRING,
+        accessKeyId: STRING,
+        userName: STRING,
+        sessionContext: STRUCT<
+            attributes: STRUCT<
+                mfaAuthenticated: STRING,
+                creationDate: STRING>,
+            sessionIssuer: STRUCT<
+                type: STRING,
+                principalId: STRING,
+                arn: STRING,
+                accountId: STRING,
+                userName: STRING>,
+            ec2RoleDelivery:string,
+            webIdFederationData:map<string,string>
+        >
+    >,
+    eventTime STRING,
+    eventSource STRING,
+    eventName STRING,
+    awsRegion STRING,
+    sourceIpAddress STRING,
+    userAgent STRING,
+    errorCode STRING,
+    errorMessage STRING,
+    requestparameters STRING,
+    responseelements STRING,
+    additionaleventdata STRING,
+    requestId STRING,
+    eventId STRING,
+    readOnly STRING,
+    resources ARRAY<STRUCT<
+        arn: STRING,
+        accountId: STRING,
+        type: STRING>>,
+    eventType STRING,
+    apiVersion STRING,
+    recipientAccountId STRING,
+    serviceEventDetails STRING,
+    sharedEventID STRING,
+    vpcendpointid STRING,
+    tlsDetails struct<
+        tlsVersion:string,
+        cipherSuite:string,
+        clientProvidedHostHeader:string>
+  )
+  PARTITIONED BY (
+    \`timestamp\` string)
+  ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe'
+  STORED AS INPUTFORMAT 'com.amazon.emr.cloudtrail.CloudTrailInputFormat'
+  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
+  LOCATION
+    's3://$S3_BUCKET_NAME/AWSLogs/$ACCOUNT_ID/CloudTrail/$AWS_REGION'
+  TBLPROPERTIES (
+    'projection.enabled'='true', 
+    'projection.timestamp.format'='yyyy/MM/dd', 
+    'projection.timestamp.interval'='1', 
+    'projection.timestamp.interval.unit'='DAYS', 
+    'projection.timestamp.range'='$START_TIMESTAMP,NOW', 
+    'projection.timestamp.type'='date', 
+    'storage.location.template'='s3://$S3_BUCKET_NAME/AWSLogs/$ACCOUNT_ID/CloudTrail/$AWS_REGION/\${timestamp}')
+EOF
+)
+
+# Create Athena workgroup
+echo "Creating Athena workgroup..."
+aws athena create-work-group \
+  --region $AWS_REGION \
+  --name $ATHENA_WORKGROUP_NAME \
+  --description "$ATHENA_WORKGROUP_DESCRIPTION" \
+  --output json
+
+if [ $? -eq 0 ]; then
+    echo "Athena workgroup $ATHENA_WORKGROUP_NAME created!"
+fi 
+
+# Create partitioned Athena table
+echo "Creating Athena table..."
+aws athena start-query-execution \
+  --region $AWS_REGION \
+  --query-string "$CREATE_TABLE_QUERY" \
+  --result-configuration "OutputLocation=s3://$ATHENA_OUTPUT_LOCATION"
+
+if [ $? -eq 0 ]; then
+    echo "Athena table created successfully!"
+fi
+```
 
 > **NOTE:** The CloudTrail "Event history" section in the console has a "Create 
 > Athena table" option. However, the resulting query doesn't account for 
@@ -164,8 +214,10 @@ portion of the path (S3 object key).
 > size of the trail being imported to Athena.
 {: .prompt-info }
 
-Now, we can begin our investigation! Open up a new tab within the query editor 
-and locate the initial CloudTrail event that likely produced the alert:    
+Now, we can begin our investigation! Navigate to Athena in the AWS console, open
+up a new tab within the query editor, choose the newly created workgroup using 
+the dropdown in the top-right and locate the initial CloudTrail event that 
+likely produced the alert:    
 
 ```sql
 select eventtime, useridentity, eventsource, eventname, awsregion, sourceipaddress, useragent, requestparameters, tlsdetails
@@ -178,19 +230,20 @@ and json_extract_scalar(requestparameters, '$.secretId') = 'vulnerable_lambda_cg
 
 Review the results, with specific focus on the `useridentity` attribute:  
 
-| useridentity |	eventtime |	eventsource |	eventname |	awsregion |	sourceipaddress |	useragent |	requestparameters |	tlsdetails |
+| eventtime |	useridentity |	eventsource |	eventname |	awsregion |	sourceipaddress |	useragent |	requestparameters |	tlsdetails |
 |--------------|--------------|-------------|-------------|-----------|-----------------|-------------|-------------------|------------|
-| {type=IAMUser, principalid=AIDAREDACTED, arn=arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgid13u1qpdipe, accountid=REDACTED, invokedby=null, accesskeyid=AKIAREDACTED, username=cg-bilbo-vulnerable_lambda_cgid13u1qpdipe, sessioncontext=null} |	2023-03-28T17:18:59Z |	secretsmanager.amazonaws.com |	GetSecretValue	| us-east-1 |	1.2.3.4 |	aws-cli/2.9.1 Python/3.9.11 Linux/5.15.90.1-microsoft-standard-WSL2 exe/x86_64.ubuntu.22 prompt/off command/secretsmanager.get-secret-value	| {"secretId":"vulnerable_lambda_cgid13u1qpdipe-final_flag"}	| {tlsversion=TLSv1.2, ciphersuite=ECDHE-RSA-AES128-GCM-SHA256, clientprovidedhostheader=secretsmanager.us-east-1.amazonaws.com} |
+| 2023-03-28T17:18:59Z | {type=IAMUser, principalid=AIDAREDACTED, arn=arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgid13u1qpdipe, accountid=REDACTED, invokedby=null, accesskeyid=AKIAREDACTED, username=cg-bilbo-vulnerable_lambda_cgid13u1qpdipe, sessioncontext=null} |	secretsmanager.amazonaws.com |	GetSecretValue	| us-east-1 |	1.2.3.4 |	aws-cli/2.9.1 Python/3.9.11 Linux/5.15.90.1-microsoft-standard-WSL2 exe/x86_64.ubuntu.22 prompt/off command/secretsmanager.get-secret-value	| {"secretId":"vulnerable_lambda_cgid13u1qpdipe-final_flag"}	| {tlsversion=TLSv1.2, ciphersuite=ECDHE-RSA-AES128-GCM-SHA256, clientprovidedhostheader=secretsmanager.us-east-1.amazonaws.com} |
 
 We've discovered the offending principal is an IAM user prepended with 
-"cg-bilbo". Let's determine what else this particular user has done from this 
-particular IP address by pivoting on the corresponding access key:  
+"cg-bilbo". Let's determine what else this particular user has done from the 
+provided IP address by pivoting on the corresponding access key:  
 
 ```sql
 select eventtime, sourceipaddress, useridentity.username, eventsource, eventname
 from cloudtrail_logs_pp
 where useridentity.accesskeyid = 'AKIAREDACTED'
 and sourceipaddress = '1.2.3.4'
+order by eventtime
 ```
 
 | eventtime |	sourceipaddress	| username |	eventsource |	eventname |
@@ -212,11 +265,11 @@ and sourceipaddress = '1.2.3.4'
 | 2023-03-28T17:18:38Z |	1.2.3.4 |	cg-bilbo-vulnerable_lambda_cgid13u1qpdipe	| secretsmanager.amazonaws.com |	ListSecrets |
 | 2023-03-28T17:18:59Z |	1.2.3.4 |	cg-bilbo-vulnerable_lambda_cgid13u1qpdipe	| secretsmanager.amazonaws.com |	GetSecretValue |
 
-The initial set of API calls leading up to the call to `AssumeRole` are 
-interesting, as they appear to be potential reconnaissance (series of `Get*` and
-`List*` requests). To confirm this suspicion, let's dig into the request 
-parameters. It'd be quite strange for a legitimate user to issue a flurry of 
-queries trying to determine what permissions they had, no?
+The initial set of API calls leading up to the call to `AssumeRole` is 
+interesting, as those calls appear to be potential reconnaissance (series of 
+`Get*` and `List*` requests). To confirm this suspicion, let's dig into the 
+request parameters. It'd be quite strange for a legitimate user to issue a 
+flurry of queries trying to determine what permissions they had, no?
 
 ```sql
 select eventtime, eventname, requestparameters, responseelements
@@ -301,7 +354,8 @@ function) to achieve this.
 
 2. Choose Logs > Log groups
 
-3. Select the appropriate log group - `/aws/lambda/vulnerable_lambda_cgid13u1qpdipe-policy_applier_lambda1`
+3. Select the appropriate log group (e.g., `/aws/lambda/my-function`). In this 
+case, `/aws/lambda/vulnerable_lambda_cgid13u1qpdipe-policy_applier_lambda1`.
 
 4. Multiple log streams may exist. Be sure to choose the stream that contains 
 logs covering the same time frame as the call to `Invoke` noted in the 
@@ -364,6 +418,22 @@ and from_iso8601_timestamp(eventtime) >  from_iso8601_timestamp('2023-03-28T17:0
 | 2023-03-28T17:18:38Z |	ListSecrets |	1.2.3.4 |	arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgid13u1qpdipe | | |
 | 2023-03-28T17:18:59Z |	GetSecretValue |	1.2.3.4 |	arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgid13u1qpdipe | {"secretId":"vulnerable_lambda_cgid13u1qpdipe-final_flag"} | |
 
+> **NOTE:** If, for some reason, Lambda function logs were not available via 
+> CloudWatch or the logs were insufficient, we could proactively hunt for events
+> in CloudTrail where the user identity is the Lambda execution role:  
+>
+>   ```sql
+>   select eventtime, useridentity, eventsource, eventname, awsregion, requestparameters, responseelements
+>   from cloudtrail_logs_pp
+>   where timestamp >= '2023/03/28'
+>   and useridentity.arn = 'arn:aws:sts::REDACTED:assumed-role/vulnerable_lambda_cgid13u1qpdipe-policy_applier_lambda1/vulnerable_lambda_cgid13u1qpdipe-policy_applier_lambda1'
+>   order by eventtime desc
+>   ```
+{: .prompt-info }
+
+And we've come full circle. At this point in time, we have confidently 
+established a detailed timeline of events.
+
 ## Evicting the Attacker
 
 We have to move quickly. The attacker has administrative access to the affected
@@ -385,9 +455,10 @@ IAM user, we must delete all existing access keys (disabling is not an option
 because disabled access keys [can be re-enabled](https://docs.aws.amazon.com/IAM/latest/APIReference/API_UpdateAccessKey.html))
 and detaching all IAM policies (both managed and user-defined/inline). 
 Additionally, we must comb through the CloudTrail logs in search for any 
-attempts to persist or escalate privileges by creating new IAM resources, 
-modifying existing ones, use of alternate methods of authentication, etc. We've
-already conducted this search, but here are some common API calls to look for:  
+attempts to persist or [escalate privileges](https://bishopfox.com/blog/privilege-escalation-in-aws) 
+by creating new IAM resources, modifying existing ones, use of alternate methods 
+of authentication, etc. We've already conducted this search, but here are some 
+common API calls to look for:  
 * 
 
 ## How can we detect this?
