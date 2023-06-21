@@ -17,11 +17,12 @@ Attacking CloudGoat's vulnerable Lambda scenario
 
 In [part one](https://0xdeadbeefjerky.com/posts/cloudgoat-lambda-walkthrough/) 
 of this series, we walked through the steps necessary to exploit a Lambda 
-function with an inherent SQL injection vulnerability, escalate our privileges 
-and subsequently access company secrets. In this post (part two), we'll assume 
-the role of a responder (e.g., SOC analyst, IR team member) and conduct an 
-investigation with the goal of evicting the attacker from the affected AWS 
-environment. The structure of this post will loosely follow [NIST's incident handling guide](https://nvlpubs.nist.gov/nistpubs/specialpublications/nist.sp.800-61r2.pdf)
+function with an inherent SQL injection vulnerability using a compromised AWS 
+access key, escalate our privileges and subsequently access company secrets. In 
+this post (part two), we'll assume the role of a responder (e.g., SOC analyst, 
+IR team member) and conduct an investigation with the goal of evicting the 
+attacker from the affected AWS environment. The structure of this post will 
+loosely follow [NIST's incident handling guide](https://nvlpubs.nist.gov/nistpubs/specialpublications/nist.sp.800-61r2.pdf)
 as well as the [AWS Security Incident Response Guide](https://docs.aws.amazon.com/whitepapers/latest/aws-security-incident-response-guide/aws-security-incident-response-guide.html):  
 * ~~Preparation~~ (skip this, as we're dealing with an "active" incident)
 * Detection and Analysis
@@ -430,7 +431,7 @@ Secrets Manager.
 ### Quarantine the IAM User
 
 In order to prevent the attacker from causing any further damage by using this 
-IAM user, we must delete the affected access keys (disabling is not an option 
+IAM user, we must delete the affected access keys (disabling isn't preferred 
 because disabled access keys [can be re-enabled](https://docs.aws.amazon.com/IAM/latest/APIReference/API_UpdateAccessKey.html)). 
 Note that deleting an access key is an irreversible action, so be sure to 
 properly document the access key ID somewhere (e.g., incident report) for record 
