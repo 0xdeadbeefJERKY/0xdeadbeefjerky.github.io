@@ -5,7 +5,7 @@ description: >
     vulnerable lambda challenge.
 date: 2023-03-03 00:55:43-05:00
 categories: [Cloud, AWS] 
-tags: [aws, cloud, lab, walkthrough]
+tags: [aws, cloud, lab, walkthrough, lambda]
 toc: true
 ---
 
@@ -790,9 +790,9 @@ aws --region us-east-1 secretsmanager get-secret-value --secret-id vulnerable_la
 }
 ```
 
-## How can we detect this?
+## How can we respond to this?
 
-Part two of this series will cover how we can deploy detections designed to 
-proactively identify this malicious activity.
+In part two of this series, we'll put on our incident response hat and actively
+investigate and defend against this attack.
 
 Happy (hacking\|hunting)!
