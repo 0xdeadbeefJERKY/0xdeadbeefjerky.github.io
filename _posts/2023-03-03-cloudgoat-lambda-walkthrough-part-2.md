@@ -3,7 +3,7 @@ title:  "CloudGoat Vulnerable Lambda Scenario - Part 2 (Response)"
 description: > 
     As an incident responder, walk through how we can investigate and resolve an
     ongoing attack targeting CloudGoat's vulnerable Lambda scenario.
-date: 2023-03-28 14:46:58-04:00
+date: 2023-06-21 00:15:40-04:00
 categories: [Cloud, AWS] 
 tags: [aws, cloud, lab, walkthrough, lambda, response]
 toc: true
@@ -21,9 +21,14 @@ function with an inherent SQL injection vulnerability, escalate our privileges
 and subsequently access company secrets. In this post (part two), we'll assume 
 the role of a responder (e.g., SOC analyst, IR team member) and conduct an 
 investigation with the goal of evicting the attacker from the affected AWS 
-environment.
+environment. The structure of this post will loosely follow [NIST's incident handling guide](https://nvlpubs.nist.gov/nistpubs/specialpublications/nist.sp.800-61r2.pdf)
+as well as the [AWS Security Incident Response Guide](https://docs.aws.amazon.com/whitepapers/latest/aws-security-incident-response-guide/aws-security-incident-response-guide.html):  
+* ~~Preparation~~ (skip this, as we're dealing with an "active" incident)
+* Detection and Analysis
+* Containment, Eradication and Recovery
+* ~~Post-Incident Activity~~ (we'll cover this in future posts)
 
-## The Initial Alert
+## Detection: The Initial Alert
 
 The starting point that triggers our investigation would be entirely dependent 
 on the security tooling being used by the organization. For the sake of example,
@@ -51,12 +56,12 @@ is what we're given:
 > 2023-03-28T17:18:59Z.
 {: .prompt-danger }
 
-## Building Context
+## Analysis: Building Context and Timeline
 
 A responder's ability to quickly and effectively investigate an incident is 
 almost entirely dependent on the context that's made available to them. In this 
 example, the context is quite limited (intentionally), so we're left to build 
-out the necessary context on our own.
+it out on our own.
 
 ### Analyze Cloudtrail Logs Using Athena
 
@@ -65,159 +70,44 @@ IP. Let's pivot on the secret ID in question by pulling the relevant CloudTrail
 logs - events with an event name of `GetSecretValue` further filtered on both 
 the secret ID (`CloudTrailEvent:requestParameters:secretId`) and the source IP
 address. There are many options to sift through and analyze CloudTrail data, 
-such as piping output from the AWS CLI to a utility such as `jq`, using the 
+such as piping output from the AWS CLI to a utility (e.g., `jq`), using the 
 Python SDK and storing the output as a Pandas DataFrame (ideally, [using a Jupyter notebook](https://catalog.workshops.aws/incident-response-jupyter/en-US)), 
 etc. Because we're dedicated to the theme of using native AWS services and 
 tooling when possible, we'll [query CloudTrail logs using Athena](https://docs.aws.amazon.com/athena/latest/ug/cloudtrail-logs.html) 
 for this purpose.
 
-Execute the following bash script by passing the necessary arguments.
+Execute [this bash script](https://gist.github.com/0xdeadbeefJERKY/25eb17714657ce3847a299a84648a26d)
+to setup the necessary Athena components for CloudTrail log analysis. For 
+example:  
 
 ```bash
-# setup-investigation.sh
-#!/bin/bash
-
-# Example: 
-# ./setup-investigation.sh -r us-east-1 -b example-bucket-123 \
-#   -w test-workgroup -o example-athena-output-bucket-456 -d "this is a test" \
-#   -n cloudtrail_logs_test -t "2023/03/01"
-
-# Parse command-line arguments
-while getopts ":r:b:w:o:d:n:t:" opt; do
-  case ${opt} in
-    r) AWS_REGION=$OPTARG;;
-    b) S3_BUCKET_NAME=$OPTARG;;
-    w) ATHENA_WORKGROUP_NAME=$OPTARG;;
-    o) ATHENA_OUTPUT_LOCATION=$OPTARG;;
-    d) ATHENA_WORKGROUP_DESCRIPTION=$OPTARG;;
-    n) ATHENA_TABLE_NAME=$OPTARG;;
-    t) START_TIMESTAMP=$OPTARG;;
-    \?)
-      echo "Invalid option: -$OPTARG" >&2
-      exit 1
-      ;;
-    :)
-      echo "Option -$OPTARG requires an argument." >&2
-      exit 1
-      ;;
-  esac
-done
-
-# Check if all required arguments are provided
-if [ -z "$AWS_REGION" ] || [ -z "$S3_BUCKET_NAME" ] || [ -z "$ATHENA_WORKGROUP_NAME" ] || [ -z "$ATHENA_OUTPUT_LOCATION" ] || [ -z "$ATHENA_WORKGROUP_DESCRIPTION" ] || [ -z "$START_TIMESTAMP" ] || [ -z "$ATHENA_TABLE_NAME" ]; then
-  echo "Usage: $0 -r <AWS_REGION> -b <S3_BUCKET_NAME> -w <ATHENA_WORKGROUP_NAME> -o <ATHENA_OUTPUT_LOCATION> -t <START_TIMESTAMP> -d <ATHENA_WORKGROUP_DESCRIPTION> -n <ATHENA_TABLE_NAME>"
-  exit 1
-fi
-
-# Fetch current AWS account ID
-ACCOUNT_ID=`aws sts get-caller-identity --query 'Account' --output text`
-
-CREATE_TABLE_QUERY=$(cat <<EOF
-  CREATE EXTERNAL TABLE $ATHENA_TABLE_NAME(
-    eventVersion STRING,
-    userIdentity STRUCT<
-        type: STRING,
-        principalId: STRING,
-        arn: STRING,
-        accountId: STRING,
-        invokedBy: STRING,
-        accessKeyId: STRING,
-        userName: STRING,
-        sessionContext: STRUCT<
-            attributes: STRUCT<
-                mfaAuthenticated: STRING,
-                creationDate: STRING>,
-            sessionIssuer: STRUCT<
-                type: STRING,
-                principalId: STRING,
-                arn: STRING,
-                accountId: STRING,
-                userName: STRING>,
-            ec2RoleDelivery:string,
-            webIdFederationData:map<string,string>
-        >
-    >,
-    eventTime STRING,
-    eventSource STRING,
-    eventName STRING,
-    awsRegion STRING,
-    sourceIpAddress STRING,
-    userAgent STRING,
-    errorCode STRING,
-    errorMessage STRING,
-    requestparameters STRING,
-    responseelements STRING,
-    additionaleventdata STRING,
-    requestId STRING,
-    eventId STRING,
-    readOnly STRING,
-    resources ARRAY<STRUCT<
-        arn: STRING,
-        accountId: STRING,
-        type: STRING>>,
-    eventType STRING,
-    apiVersion STRING,
-    recipientAccountId STRING,
-    serviceEventDetails STRING,
-    sharedEventID STRING,
-    vpcendpointid STRING,
-    tlsDetails struct<
-        tlsVersion:string,
-        cipherSuite:string,
-        clientProvidedHostHeader:string>
-  )
-  PARTITIONED BY (
-    \`timestamp\` string)
-  ROW FORMAT SERDE 'org.apache.hive.hcatalog.data.JsonSerDe'
-  STORED AS INPUTFORMAT 'com.amazon.emr.cloudtrail.CloudTrailInputFormat'
-  OUTPUTFORMAT 'org.apache.hadoop.hive.ql.io.HiveIgnoreKeyTextOutputFormat'
-  LOCATION
-    's3://$S3_BUCKET_NAME/AWSLogs/$ACCOUNT_ID/CloudTrail/$AWS_REGION'
-  TBLPROPERTIES (
-    'projection.enabled'='true', 
-    'projection.timestamp.format'='yyyy/MM/dd', 
-    'projection.timestamp.interval'='1', 
-    'projection.timestamp.interval.unit'='DAYS', 
-    'projection.timestamp.range'='$START_TIMESTAMP,NOW', 
-    'projection.timestamp.type'='date', 
-    'storage.location.template'='s3://$S3_BUCKET_NAME/AWSLogs/$ACCOUNT_ID/CloudTrail/$AWS_REGION/\${timestamp}')
-EOF
-)
-
-# Create Athena workgroup
-echo "Creating Athena workgroup..."
-aws athena create-work-group \
-  --region $AWS_REGION \
-  --name $ATHENA_WORKGROUP_NAME \
-  --description "$ATHENA_WORKGROUP_DESCRIPTION" \
-  --output json
-
-if [ $? -eq 0 ]; then
-    echo "Athena workgroup $ATHENA_WORKGROUP_NAME created!"
-fi 
-
-# Create partitioned Athena table
-echo "Creating Athena table..."
-aws athena start-query-execution \
-  --region $AWS_REGION \
-  --query-string "$CREATE_TABLE_QUERY" \
-  --result-configuration "OutputLocation=s3://$ATHENA_OUTPUT_LOCATION"
-
-if [ $? -eq 0 ]; then
-    echo "Athena table created successfully!"
-fi
+./aws-setup-cloudtrail-investigation.sh \ 
+   -c cloudtrail-logs-123/AWSLogs/REDACTED/CloudTrail/us-east-1 \ # full S3 bucket path to CloudTrail logs
+   -w secret-exposure-workgroup \ # name of Athena workgroup
+   -d "workgroup for investigating incident XYZ" \ # Athena workgroup description
+   -a us-east-1 \ # Athena workgroup region
+   -r athena-results-456 \ # bucket to store Athena query results
+   -n cloudtrail_logs_us_east_1 \ # Athena table name
+   -s "2023/03/01" # CloudTrail logs start date
+   -e "2023/03/08" # CloudTrail logs end date
 ```
 
 > **NOTE:** The CloudTrail "Event history" section in the console has a "Create 
-> Athena table" option. However, the resulting query doesn't account for 
-> partitioning, which may unnecessarily increase query costs, depending on the 
-> size of the trail being imported to Athena.
+> Athena table" option. However, the resulting SQL statement doesn't account for 
+> partitioning, which may unnecessarily increase query time and costs, depending 
+> on the size of the trail being imported to Athena.
 {: .prompt-info }
 
 Now, we can begin our investigation! Navigate to Athena in the AWS console, open
-up a new tab within the query editor, choose the newly created workgroup using 
-the dropdown in the top-right and locate the initial CloudTrail event that 
-likely produced the alert:    
+up a new tab within the query editor:  
+
+![cloudgoat](/assets/img/athena.png){: .center-image}
+
+Choose the newly created workgroup using the dropdown in the top-right:  
+
+![cloudgoat](/assets/img/workgroup.png){: .center-image}
+
+Locate the initial CloudTrail event that likely produced the alert:      
 
 ```sql
 select eventtime, useridentity, eventsource, eventname, awsregion, sourceipaddress, useragent, requestparameters, tlsdetails
@@ -265,11 +155,23 @@ order by eventtime
 | 2023-03-28T17:18:38Z |	1.2.3.4 |	cg-bilbo-vulnerable_lambda_cgid13u1qpdipe	| secretsmanager.amazonaws.com |	ListSecrets |
 | 2023-03-28T17:18:59Z |	1.2.3.4 |	cg-bilbo-vulnerable_lambda_cgid13u1qpdipe	| secretsmanager.amazonaws.com |	GetSecretValue |
 
+It's entirely possible that the attacker has used this compromised access key 
+from multiple IP addresses to throw us off. However, in order to detangle the 
+attacker activity from legitimate use of the same access key, we would need to
+determine when the access key was compromised and perform a retroactive analysis
+of the IAM user's activity to identify outliers based on known-good IP 
+addresses, user agent string, etc.
+
+Additionally, we should pivot solely on the source IP address to determine if 
+the attacker is present elsewhere in the same AWS account. This could be done to
+rule out the possibility that the attacker was able to compromise this IAM user
+account through some other compromised identity or resource in the account. 
+
 The initial set of API calls leading up to the call to `AssumeRole` is 
 interesting, as those calls appear to be potential reconnaissance (series of 
 `Get*` and `List*` requests). To confirm this suspicion, let's dig into the 
-request parameters. It'd be quite strange for a legitimate user to issue a 
-flurry of queries trying to determine what permissions they had, no?
+request parameters. It'd be quite strange for a legitimate user to make a bunch
+of API calls to determine what permissions they had, no?
 
 ```sql
 select eventtime, eventname, requestparameters, responseelements
@@ -301,9 +203,81 @@ order by eventtime
 Shockingly, our suspicion was correct! According to the `requestparameters`, the
 user was targeting the very IAM user they used to issue the request. This is a 
 very common form of discovery (more specifically, situational awareness) when a 
-cloud account has been compromised. Let's determine which IAM roles the user was
-able to assume, and what subsequent actions they were able to perform using that
-role.
+cloud account has been compromised. Ironically, security practitioners often 
+find themselves needing to perform a bit of discovery as well because they 
+typically don't have deep insight into their organization's infrastructure, 
+identities, workloads, etc. More specifically, it would be really helpful to 
+understand what permissions this IAM user had at the time of compromise (before
+the attacker had a chance to make any IAM-specific changes). Unless our 
+organization has AWS Config setup, our only other option is to dig through 
+CloudTrail logs and manually piece together relevant IAM events. Let's enumerate 
+this IAM user's current permissions, then we can sweep CloudTrail events for any 
+IAM actions targeting this IAM user. The results won't be 100% accurate, but 
+it's at least a reference point.
+
+```bash
+# list inline policies attached to user
+aws iam list-user-policies --user-name cg-bilbo-vulnerable_lambda_cgid13u1qpdipe
+{
+    "PolicyNames": [
+        "cg-bilbo-vulnerable_lambda_cgid13u1qpdipe-standard-user-assumer"
+    ]
+}
+# get policy document
+aws iam get-user-policy --user-name cg-bilbo-vulnerable_lambda_cgid13u1qpdipe --policy-name cg-bilbo-vulnerable_lambda_cgid13u1qpdipe-standard-user-assumer
+{
+    "UserName": "cg-bilbo-vulnerable_lambda_cgid13u1qpdipe",
+    "PolicyName": "cg-bilbo-vulnerable_lambda_cgid13u1qpdipe-standard-user-assumer",
+    "PolicyDocument": {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Action": "sts:AssumeRole",
+                "Effect": "Allow",
+                "Resource": "arn:aws:iam::REDACTED:role/cg-lambda-invoker*",
+                "Sid": ""
+            },
+            {
+                "Action": [
+                    "iam:Get*",
+                    "iam:List*",
+                    "iam:SimulateCustomPolicy",
+                    "iam:SimulatePrincipalPolicy"
+                ],
+                "Effect": "Allow",
+                "Resource": "*",
+                "Sid": ""
+            }
+        ]
+    }
+}
+# list managed policies attached to user
+aws iam list-attached-user-policies --user-name cg-bilbo-vulnerable_lambda_cgid13u1qpdipe
+{
+    "AttachedPolicies": [
+        {
+            "PolicyName": "AdministratorAccess",
+            "PolicyArn": "arn:aws:iam::aws:policy/AdministratorAccess"
+        }
+    ]
+}
+# list group memberships
+aws iam list-groups-for-user --user-name cg-bilbo-vulnerable_lambda_cgid13u1qpdipe
+{
+    "Groups": []
+}
+# list inline policies attached to group
+# aws iam list-group-policies --group-name <group_name>
+# list managed policies attached to group
+# aws iam list-attached-group-policies --group-name <group_name>
+```
+
+According to the current state of the affected IAM user, they have full 
+administrative access to the entire account, courtesy of the 
+`AdministratorAccess` managed policy. Additionally, they're able to assume any 
+IAM role prepended with "cg-lambda-invoker." Let's determine which IAM roles the 
+user was able to assume, and what subsequent actions they were able to perform 
+using that role.
 
 ```sql
 select eventtime, eventname, requestparameters, responseelements
@@ -354,12 +328,16 @@ function) to achieve this.
 
 2. Choose Logs > Log groups
 
+![cloudgoat](/assets/img/cw1.png){: .center-image}
+
 3. Select the appropriate log group (e.g., `/aws/lambda/my-function`). In this 
 case, `/aws/lambda/vulnerable_lambda_cgid13u1qpdipe-policy_applier_lambda1`.
 
 4. Multiple log streams may exist. Be sure to choose the stream that contains 
 logs covering the same time frame as the call to `Invoke` noted in the 
 CloudTrail events (in this case, 2023-03-28T17:07:25Z)
+
+![cloudgoat](/assets/img/cw2.png){: .center-image}
 
 | timestamp | message |
 |-----------|---------|
@@ -399,6 +377,20 @@ ec2-44-200-244-86.compute-1.amazonaws.com.
 Lambda function as its execution role 
 (`vulnerable_lambda_cgid13u1qpdipe-policy_applier_lambda1`). 
 
+
+> **NOTE:** If, for some reason, Lambda function logs were not available via 
+> CloudWatch or the logs were insufficient, we could proactively hunt for events
+> in CloudTrail where the user identity is the Lambda execution role:  
+>
+>   ```sql
+>   select eventtime, useridentity, eventsource, eventname, awsregion, requestparameters, responseelements
+>   from cloudtrail_logs_pp
+>   where timestamp >= '2023/03/28'
+>   and useridentity.sessioncontext.sessionissuer.username = 'vulnerable_lambda_cgid13u1qpdipe-policy_applier_lambda1'
+>   order by eventtime desc
+>   ```
+{: .prompt-info }
+
 At this point, we've confirmed that the attacker was successfully able to attach
 the `AdministratorAccess` managed policy to the compromised IAM user. Given this
 access, the attacker was likely able to cause a lot more damage, so let's query
@@ -418,23 +410,10 @@ and from_iso8601_timestamp(eventtime) >  from_iso8601_timestamp('2023-03-28T17:0
 | 2023-03-28T17:18:38Z |	ListSecrets |	1.2.3.4 |	arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgid13u1qpdipe | | |
 | 2023-03-28T17:18:59Z |	GetSecretValue |	1.2.3.4 |	arn:aws:iam::REDACTED:user/cg-bilbo-vulnerable_lambda_cgid13u1qpdipe | {"secretId":"vulnerable_lambda_cgid13u1qpdipe-final_flag"} | |
 
-> **NOTE:** If, for some reason, Lambda function logs were not available via 
-> CloudWatch or the logs were insufficient, we could proactively hunt for events
-> in CloudTrail where the user identity is the Lambda execution role:  
->
->   ```sql
->   select eventtime, useridentity, eventsource, eventname, awsregion, requestparameters, responseelements
->   from cloudtrail_logs_pp
->   where timestamp >= '2023/03/28'
->   and useridentity.arn = 'arn:aws:sts::REDACTED:assumed-role/vulnerable_lambda_cgid13u1qpdipe-policy_applier_lambda1/vulnerable_lambda_cgid13u1qpdipe-policy_applier_lambda1'
->   order by eventtime desc
->   ```
-{: .prompt-info }
-
 And we've come full circle. At this point in time, we have confidently 
 established a detailed timeline of events.
 
-## Evicting the Attacker
+## Containment
 
 We have to move quickly. The attacker has administrative access to the affected
 AWS account, and they've already extracted one of the company's secrets from 
@@ -451,15 +430,88 @@ Secrets Manager.
 ### Quarantine the IAM User
 
 In order to prevent the attacker from causing any further damage by using this 
-IAM user, we must delete all existing access keys (disabling is not an option 
-because disabled access keys [can be re-enabled](https://docs.aws.amazon.com/IAM/latest/APIReference/API_UpdateAccessKey.html))
-and detaching all IAM policies (both managed and user-defined/inline). 
-Additionally, we must comb through the CloudTrail logs in search for any 
-attempts to persist or [escalate privileges](https://bishopfox.com/blog/privilege-escalation-in-aws) 
+IAM user, we must delete the affected access keys (disabling is not an option 
+because disabled access keys [can be re-enabled](https://docs.aws.amazon.com/IAM/latest/APIReference/API_UpdateAccessKey.html)). 
+Note that deleting an access key is an irreversible action, so be sure to 
+properly document the access key ID somewhere (e.g., incident report) for record 
+keeping.
+
+```bash
+# delete the access key 
+aws iam delete-access-key --access-key-id AKIAREDACTED
+```
+
+If we were able to confidently determine that the compromised IAM user is _not_ 
+currently in use by critical applications, infrastructure, etc., we can also 
+attach a "deny all" IAM policy to ensure the IAM user is fully quarantined, 
+preventing further compromise.
+
+```bash
+aws iam put-user-policy --user-name cg-bilbo-vulnerable_lambda_cgid13u1qpdipe \ 
+    --policy-name 'DenyAllQuarantine' \ 
+    --policy-document '{"Version":"2012-10-17","Statement":{"Effect":"Deny","Action":"*","Resource":"*"}}'
+```
+
+## Eradication
+
+Now that the user is effectively quarantined, we must comb through the 
+CloudTrail logs in search for any attempts to persist or [escalate privileges](https://bishopfox.com/blog/privilege-escalation-in-aws) 
 by creating new IAM resources, modifying existing ones, use of alternate methods 
-of authentication, etc. We've already conducted this search, but here are some 
-common API calls to look for:  
-* 
+of authentication, etc. We've already conducted this search and confirmed that
+the attacker was successful in attaching the managed `AdministratorAccess` 
+policy to the compromised IAM user. We'll need to detach this policy to return 
+the IAM user to a "known good" state:  
+
+```bash
+# detach the managed AdministratorAccess policy
+aws iam detach-user-policy --user-name cg-bilbo-vulnerable_lambda_cgid13u1qpdipe \ 
+    --policy-arn "arn:aws:iam::aws:policy/AdministratorAccess"
+```
+
+## Recovery
+
+We're not out of the woods just yet. The Lambda function is still open to 
+exploitation and offers up a method for trivial privilege escalation by way of 
+the SQL injection vulnerability. To remedy this, we need to work with the owner
+of the Lambda function to patch the relevant Python code. In this case, we need
+to remove the string concatenation and replace it with a [prepared statement that leverages a parameterized query](https://cheatsheetseries.owasp.org/cheatsheets/SQL_Injection_Prevention_Cheat_Sheet.html#defense-option-1-prepared-statements-with-parameterized-queries).
+This can be achieved using the `sqlite_utils` library that's already in use by
+the Lambda function, specifically by [passing parameters](https://sqlite-utils.datasette.io/en/stable/python-api.html#passing-parameters) 
+to the `db.query()` method:  
+
+```diff
+<     statement = f"select policy_name from policies where policy_name='{policy}' and public='True'"
+<     for row in db.query(statement):
+---
+>     prepared_statement = "select policy_name from policies where policy_name=? and public='True'"
+>     for row in db.query(prepared_statement, [policy]):
+```
+
+This change can be made from the AWS console via the Lambda function's "Code" tab 
+(don't forget to click "Deploy"). Next, navigate to the "Test" tab and create a 
+new event using the following parameters:  
+
+```json
+{
+  "user_name": "cg-bilbo-vulnerable_lambda_cgid13u1qpdipe",
+  "policy_names": ["AdministratorAccess'; --"]
+}
+```
+
+The test response confirms that our fix is working as expected!  
+
+```bash
+Test Event Name
+myTestEvent
+
+Response
+"AdministratorAccess'; -- is not an approved policy, please only choose from approved policies and don't cheat. :) "
+
+Function Logs
+START RequestId: 1eb04d3d-8b02-4b7c-9e7c-4602bad751c7 Version: $LATEST
+target policys are : ["AdministratorAccess'; --"]
+AdministratorAccess'; -- is not an approved policy, please only choose from approved policies and don't cheat. :) 
+```
 
 ## How can we detect this?
 
