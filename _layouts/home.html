@@ -1,0 +1,37 @@
+---
+layout: default
+---
+
+{% include hero.html %}
+
+<div class="container">
+  <div class="post-grid">
+    {% for post in paginator.posts %}
+      {% include post-card.html post=post %}
+    {% endfor %}
+  </div>
+
+  {% if paginator.total_pages > 1 %}
+  <div class="pagination">
+    {% if paginator.previous_page %}
+      <a href="{{ paginator.previous_page_path | relative_url }}">&laquo; Newer</a>
+    {% endif %}
+
+    {% for page_num in (1..paginator.total_pages) %}
+      {% if page_num == paginator.page %}
+        <span class="current">{{ page_num }}</span>
+      {% else %}
+        {% if page_num == 1 %}
+          <a href="{{ '/' | relative_url }}">{{ page_num }}</a>
+        {% else %}
+          <a href="{{ '/page' | append: page_num | append: '/' | relative_url }}">{{ page_num }}</a>
+        {% endif %}
+      {% endif %}
+    {% endfor %}
+
+    {% if paginator.next_page %}
+      <a href="{{ paginator.next_page_path | relative_url }}">Older &raquo;</a>
+    {% endif %}
+  </div>
+  {% endif %}
+</div>

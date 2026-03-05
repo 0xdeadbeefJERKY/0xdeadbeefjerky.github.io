@@ -2,9 +2,12 @@
 
 source "https://rubygems.org"
 
-gem "jekyll-theme-chirpy", "~> 5.4", ">= 5.4.0"
+gem "jekyll", "~> 4.3"
 gem "jekyll-sass-converter", "~> 2.0"
-gem 'jekyll-seo-tag'
+gem "jekyll-seo-tag"
+gem "jekyll-sitemap"
+gem "jekyll-archives"
+gem "jekyll-paginate"
 
 group :test do
   gem "html-proofer", "~> 3.18"

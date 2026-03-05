@@ -1,0 +1,113 @@
+.post-card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--bg-tertiary);
+  border-radius: var(--border-radius);
+  padding: var(--space-lg);
+  transition: transform var(--transition-base), border-color var(--transition-base), box-shadow var(--transition-base);
+
+  &:hover {
+    transform: translateY(-3px);
+    border-color: rgba(0, 255, 240, 0.3);
+    box-shadow: 0 4px 20px rgba(0, 255, 240, 0.08);
+  }
+}
+
+.post-card__title {
+  font-family: var(--font-heading);
+  font-size: 1.15rem;
+  font-weight: 600;
+  margin-bottom: var(--space-sm);
+
+  a {
+    color: var(--text-primary);
+    transition: color var(--transition-fast);
+
+    &:hover {
+      color: var(--accent-cyan);
+    }
+  }
+}
+
+.post-card__meta {
+  display: flex;
+  gap: var(--space-md);
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  margin-bottom: var(--space-sm);
+
+  time {
+    color: var(--accent-cyan);
+    opacity: 0.7;
+  }
+}
+
+.post-card__desc {
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin-bottom: var(--space-md);
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.post-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.tag-pill {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-family: var(--font-code);
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: rgba(191, 90, 242, 0.12);
+  color: var(--accent-purple);
+  border: 1px solid rgba(191, 90, 242, 0.2);
+}
+
+.cat-pill {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-family: var(--font-code);
+  padding: 2px 8px;
+  border-radius: 3px;
+  background: rgba(0, 255, 240, 0.08);
+  color: var(--accent-cyan);
+  border: 1px solid rgba(0, 255, 240, 0.2);
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-md);
+  margin-top: var(--space-2xl);
+
+  a, span {
+    font-family: var(--font-heading);
+    font-size: 0.9rem;
+    padding: var(--space-sm) var(--space-md);
+    border-radius: var(--border-radius);
+  }
+
+  a {
+    color: var(--accent-cyan);
+    border: 1px solid var(--bg-tertiary);
+    transition: border-color var(--transition-fast), background var(--transition-fast);
+
+    &:hover {
+      border-color: var(--accent-cyan);
+      background: rgba(0, 255, 240, 0.05);
+    }
+  }
+
+  .current {
+    background: rgba(0, 255, 240, 0.1);
+    color: var(--accent-cyan);
+    border: 1px solid var(--accent-cyan);
+  }
+}

@@ -1,0 +1,11 @@
+{% if site.data.share.platforms %}
+<div class="post-share">
+  <span class="label">Share:</span>
+  {% for platform in site.data.share.platforms %}
+    {% assign share_url = platform.link | replace: 'URL', page.url | prepend: site.url | replace: 'TITLE', page.title | url_encode %}
+    <a href="{{ share_url }}" target="_blank" rel="noopener" aria-label="Share on {{ platform.type }}">
+      <i class="{{ platform.icon }}"></i>
+    </a>
+  {% endfor %}
+</div>
+{% endif %}
