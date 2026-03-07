@@ -19,7 +19,7 @@ document.addEventListener('DOMContentLoaded', function () {
     if (taglineEl) {
         var fullText = taglineEl.textContent;
         var deleteStr = 'an offensive security engineer';
-        var typeStr = 'a detection and response engineer passionate about AI';
+        var typeStr = 'a detection and response engineer with a passion for generative AI and AI agents';
         var deleteStart = fullText.lastIndexOf(deleteStr);
 
         if (deleteStart !== -1) {
