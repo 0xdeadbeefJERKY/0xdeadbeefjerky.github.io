@@ -73,6 +73,36 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // ToC scroll spy — highlight active section
+    var tocLinks = document.querySelectorAll('#toc-list a');
+    if (tocLinks.length > 0) {
+        var tocHeadings = [];
+        tocLinks.forEach(function (link) {
+            var id = link.getAttribute('href').slice(1);
+            var el = document.getElementById(id);
+            if (el) tocHeadings.push({ el: el, link: link });
+        });
+
+        function updateActiveToc() {
+            var scrollPos = window.scrollY + 100;
+            var active = null;
+            for (var i = 0; i < tocHeadings.length; i++) {
+                if (tocHeadings[i].el.offsetTop <= scrollPos) {
+                    active = tocHeadings[i];
+                }
+            }
+            tocLinks.forEach(function (link) {
+                link.classList.remove('active');
+            });
+            if (active) {
+                active.link.classList.add('active');
+            }
+        }
+
+        window.addEventListener('scroll', updateActiveToc, { passive: true });
+        updateActiveToc();
+    }
+
     // Scroll fade-in animation
     if ('IntersectionObserver' in window) {
         var observer = new IntersectionObserver(function (entries) {
