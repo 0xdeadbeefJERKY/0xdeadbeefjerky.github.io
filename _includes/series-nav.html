@@ -1,0 +1,22 @@
+{% assign series_name = page.series.name %}
+{% assign series_posts = site.posts | where_exp: "p", "p.series.name == series_name" | sort: "date" %}
+{% if series_posts.size > 1 %}
+<div class="series-nav">
+  <div class="series-nav__header">
+    <i class="fas fa-layer-group"></i>
+    <span class="series-nav__label">Series:</span>
+    <span class="series-nav__name">{{ series_name }}</span>
+  </div>
+  <ol class="series-nav__list">
+    {% for spost in series_posts %}
+    <li class="series-nav__item {% if spost.url == page.url %}series-nav__item--current{% endif %}">
+      {% if spost.url == page.url %}
+        <span>Part {{ forloop.index }}: {{ spost.title }}</span>
+      {% else %}
+        <a href="{{ spost.url | relative_url }}">Part {{ forloop.index }}: {{ spost.title }}</a>
+      {% endif %}
+    </li>
+    {% endfor %}
+  </ol>
+</div>
+{% endif %}

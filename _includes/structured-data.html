@@ -1,0 +1,74 @@
+{% if page.layout == 'post' %}
+{% assign sd_words = page.content | number_of_words %}
+{% assign sd_minutes = sd_words | divided_by: 200 %}
+{% if sd_minutes < 1 %}{% assign sd_minutes = 1 %}{% endif %}
+{% if page.description %}
+  {% assign sd_description = page.description | jsonify %}
+{% else %}
+  {% assign sd_description = page.excerpt | strip_html | strip_newlines | truncate: 160 | jsonify %}
+{% endif %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": {{ page.title | jsonify }},
+  "description": {{ sd_description }},
+  "author": {
+    "@type": "Person",
+    "name": {{ site.social.name | jsonify }},
+    "url": {{ site.url | jsonify }}
+  },
+  "datePublished": "{{ page.date | date_to_xmlschema }}",
+  {% if page.last_modified_at %}
+  "dateModified": "{{ page.last_modified_at | date_to_xmlschema }}",
+  {% endif %}
+  "wordCount": {{ sd_words }},
+  "timeRequired": "PT{{ sd_minutes }}M",
+  {% if page.categories.first %}
+  "articleSection": {{ page.categories | first | jsonify }},
+  {% endif %}
+  {% if page.tags.size > 0 %}
+  "keywords": {{ page.tags | join: ", " | jsonify }},
+  {% endif %}
+  "url": "{{ site.url }}{{ page.url }}",
+  {% if page.image %}
+  {% if page.image.path %}
+  "image": "{{ site.url }}{{ page.image.path }}",
+  {% else %}
+  "image": "{{ site.url }}{{ page.image }}",
+  {% endif %}
+  {% endif %}
+  "breadcrumb": {
+    "@type": "BreadcrumbList",
+    "itemListElement": [
+      {
+        "@type": "ListItem",
+        "position": 1,
+        "name": "Home",
+        "item": "{{ site.url }}/"
+      }{% if page.categories.first %},
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": {{ page.categories | first | jsonify }},
+        "item": "{{ site.url }}/categories/{{ page.categories | first | downcase }}/"
+      },
+      {
+        "@type": "ListItem",
+        "position": 3,
+        "name": {{ page.title | jsonify }}
+      }{% else %},
+      {
+        "@type": "ListItem",
+        "position": 2,
+        "name": {{ page.title | jsonify }}
+      }{% endif %}
+    ]
+  },
+  "mainEntityOfPage": {
+    "@type": "WebPage",
+    "@id": "{{ site.url }}{{ page.url }}"
+  }
+}
+</script>
+{% endif %}

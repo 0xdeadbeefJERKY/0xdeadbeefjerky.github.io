@@ -138,6 +138,84 @@ document.addEventListener('DOMContentLoaded', function () {
         updateActiveToc();
     }
 
+    // Reading progress bar
+    var progressBar = document.getElementById('reading-progress');
+    if (progressBar) {
+        var article = document.querySelector('.post-content');
+        function updateProgress() {
+            if (!article) return;
+            var articleTop = article.offsetTop;
+            var articleHeight = article.offsetHeight;
+            var scrolled = window.scrollY - articleTop;
+            var pct = Math.min(Math.max((scrolled / articleHeight) * 100, 0), 100);
+            progressBar.style.width = pct + '%';
+            progressBar.setAttribute('aria-valuenow', Math.round(pct));
+        }
+        window.addEventListener('scroll', updateProgress, { passive: true });
+        updateProgress();
+    }
+
+    // Search modal
+    var searchOverlay = document.getElementById('search-overlay');
+    var searchToggle = document.getElementById('search-toggle');
+    var searchClose = document.getElementById('search-close');
+    var searchInput = document.getElementById('search-input');
+
+    function openSearch() {
+        if (searchOverlay) {
+            searchOverlay.classList.add('open');
+            if (searchInput) searchInput.focus();
+        }
+    }
+
+    function closeSearch() {
+        if (searchOverlay) {
+            searchOverlay.classList.remove('open');
+            if (searchInput) searchInput.value = '';
+            var results = document.getElementById('search-results');
+            if (results) results.innerHTML = '';
+        }
+    }
+
+    if (searchToggle) {
+        searchToggle.addEventListener('click', openSearch);
+    }
+
+    if (searchClose) {
+        searchClose.addEventListener('click', closeSearch);
+    }
+
+    if (searchOverlay) {
+        searchOverlay.addEventListener('click', function (e) {
+            if (e.target === searchOverlay) closeSearch();
+        });
+    }
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape') closeSearch();
+        if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+            e.preventDefault();
+            if (searchOverlay && searchOverlay.classList.contains('open')) {
+                closeSearch();
+            } else {
+                openSearch();
+            }
+        }
+    });
+
+    // Initialize Simple Jekyll Search (loaded externally)
+    if (typeof SimpleJekyllSearch !== 'undefined' && searchInput) {
+        SimpleJekyllSearch({
+            searchInput: searchInput,
+            resultsContainer: document.getElementById('search-results'),
+            json: '/search.json',
+            searchResultTemplate: '<li class="search-result-item"><a href="{url}"><span class="search-result-title">{title}</span><span class="search-result-meta">{date} &middot; {categories}</span></a></li>',
+            noResultsText: '<li class="search-no-results">No results found</li>',
+            limit: 10,
+            fuzzy: false
+        });
+    }
+
     // Scroll fade-in animation
     if ('IntersectionObserver' in window) {
         var observer = new IntersectionObserver(function (entries) {

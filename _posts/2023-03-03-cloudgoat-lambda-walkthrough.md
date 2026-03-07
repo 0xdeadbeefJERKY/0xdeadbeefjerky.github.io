@@ -8,6 +8,9 @@ categories: [Cloud, AWS]
 tags: [aws, cloud, lab, walkthrough, lambda]
 image: /assets/img/cloudgoat.webp
 toc: true
+series:
+  name: "CloudGoat Vulnerable Lambda"
+  part: 1
 ---
 
 ![cloudgoat](/assets/img/cloudgoat.webp){: .center-image}

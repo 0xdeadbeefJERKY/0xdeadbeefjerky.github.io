@@ -29,6 +29,88 @@
 .mb-1 { margin-bottom: var(--space-md); }
 .mb-2 { margin-bottom: var(--space-xl); }
 
+// Print stylesheet
+@media print {
+  .site-nav,
+  .site-footer,
+  .toc-wrapper,
+  .post-nav,
+  .post-share,
+  .post-tags,
+  .related-posts,
+  .post-comments,
+  .reading-progress,
+  .breadcrumbs,
+  .copy-btn,
+  .series-nav,
+  .search-overlay {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+    font-size: 11pt;
+    line-height: 1.6;
+  }
+
+  main {
+    padding-top: 0;
+  }
+
+  .container,
+  .post-layout,
+  .content-wrapper {
+    max-width: 100%;
+    padding: 0;
+    display: block;
+  }
+
+  .post-title {
+    font-size: 18pt;
+    color: #000;
+  }
+
+  .post-content {
+    h2, h3, h4 {
+      border-left: none;
+      padding-left: 0;
+      color: #000;
+    }
+
+    a {
+      color: #000;
+      border-bottom: none;
+
+      &::after {
+        content: " (" attr(href) ")";
+        font-size: 0.8em;
+        color: #555;
+      }
+
+      &[href^="#"]::after {
+        content: "";
+      }
+    }
+  }
+
+  .highlight {
+    border: 1px solid #ccc;
+    border-left: 3px solid #333;
+    background: #f5f5f5 !important;
+
+    pre, code {
+      color: #000 !important;
+      background: #f5f5f5 !important;
+    }
+  }
+
+  .prompt-tip, .prompt-info, .prompt-warning, .prompt-danger {
+    background: #f9f9f9 !important;
+    color: #000;
+  }
+}
+
 // Custom 404 page
 .error-404 {
   text-align: center;

@@ -31,6 +31,20 @@ google_analytics:
 
 avatar: /assets/img/mehome.jpg
 toc: true
+
+comments:
+  active: giscus
+
+giscus:
+  repo: "0xdeadbeefJERKY/0xdeadbeefjerky.github.io"
+  repo_id: "REPLACE_ME"
+  category: "Announcements"
+  category_id: "REPLACE_ME"
+  mapping: "pathname"
+  reactions_enabled: "1"
+  theme: "dark_dimmed"
+  lang: "en"
+  loading: "lazy"
 paginate: 10
 
 kramdown:
@@ -55,6 +69,7 @@ defaults:
     values:
       layout: post
       toc: true
+      comments: true
       permalink: /posts/:title/
       image: /assets/img/og-default.png
   - scope:

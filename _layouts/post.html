@@ -3,12 +3,15 @@ layout: default
 ---
 
 <div class="container">
+  <div id="reading-progress" class="reading-progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" aria-label="Reading progress"></div>
   <div class="post-layout">
     <article>
+      {% include breadcrumbs.html %}
       <header class="post-header">
         <h1 class="post-title">{{ page.title }}</h1>
         {% include post-meta.html %}
       </header>
+      {% if page.series %}{% include series-nav.html %}{% endif %}
       <div class="post-content">
         {{ content }}
       </div>
@@ -17,6 +20,7 @@ layout: default
           <a href="{{ '/tags/' | append: tag | downcase | relative_url }}/" class="tag-pill">{{ tag }}</a>
         {% endfor %}
       </div>
+      {% include related-posts.html %}
       {% include share.html %}
       <nav class="post-nav">
         {% if page.previous %}
@@ -34,6 +38,7 @@ layout: default
         </a>
         {% endif %}
       </nav>
+      {% include comments.html %}
     </article>
     {% include toc.html %}
   </div>

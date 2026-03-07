@@ -5,6 +5,7 @@ date:   2018-01-29 07:38:00 -0400
 categories: [Windows, Initial Access] 
 tags: [dde, office, initial access, windows]
 toc: true
+image: /assets/img/og-default.png
 ---
 
 > Update #1 (1/29/2018): Hours after the release of this post, [Matt Nelson](https://twitter.com/enigma0x3){:target="_blank"} unleashed a [new technique](https://posts.specterops.io/reviving-dde-using-onenote-and-excel-for-code-execution-d7226864caee){:target="_blank"} to bypass the latest mitigation options made available by Microsoft. As a result, attackers can embed an Excel spreadsheet within OneNote in order to completely bypass the corresponding registry key intended to block DDE functionality. Furthermore, OneNote documents downloaded from external sources (e.g., the public Internet) are (still) not sandboxed by Protected View. I’ve added another item to the roadmap for my Office DDE payload generation tool, as I intend to automate this technique as well.

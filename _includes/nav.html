@@ -15,6 +15,9 @@
       {% for tab in sorted_tabs %}
         <a href="{{ tab.url | relative_url }}" {% if page.url == tab.url %}class="active"{% endif %}>{{ tab.title | capitalize }}</a>
       {% endfor %}
+      <button class="search-toggle" id="search-toggle" aria-label="Search">
+        <i class="fas fa-search"></i>
+      </button>
     </div>
   </div>
 </nav>

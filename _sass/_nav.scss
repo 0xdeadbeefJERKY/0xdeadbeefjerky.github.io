@@ -77,6 +77,21 @@
   }
 }
 
+.search-toggle {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 1rem;
+  cursor: pointer;
+  padding: var(--space-sm);
+  transition: color var(--transition-fast), text-shadow var(--transition-fast);
+
+  &:hover {
+    color: var(--accent-cyan);
+    text-shadow: 0 0 8px rgba(0, 255, 240, 0.5);
+  }
+}
+
 .nav-toggle {
   display: none;
   background: none;

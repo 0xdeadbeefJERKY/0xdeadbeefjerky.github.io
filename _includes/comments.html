@@ -1,0 +1,21 @@
+{% if page.comments != false and site.comments.active == 'giscus' %}
+<div class="post-comments">
+  <h3 class="comments-title">Comments</h3>
+  <script src="https://giscus.app/client.js"
+    data-repo="{{ site.giscus.repo }}"
+    data-repo-id="{{ site.giscus.repo_id }}"
+    data-category="{{ site.giscus.category }}"
+    data-category-id="{{ site.giscus.category_id }}"
+    data-mapping="{{ site.giscus.mapping }}"
+    data-strict="0"
+    data-reactions-enabled="{{ site.giscus.reactions_enabled }}"
+    data-emit-metadata="0"
+    data-input-position="bottom"
+    data-theme="{{ site.giscus.theme }}"
+    data-lang="{{ site.giscus.lang }}"
+    data-loading="{{ site.giscus.loading }}"
+    crossorigin="anonymous"
+    async>
+  </script>
+</div>
+{% endif %}
