@@ -21,10 +21,10 @@ layout: default
 
     {% assign sorted_tags = site.tags | sort %}
     {% for tag in sorted_tags %}
-      <h2 class="archive-year">{{ tag[0] }}</h2>
-      <ul class="archive-list">
+      <h2 class="blog-year">{{ tag[0] }}</h2>
+      <ul class="blog-list">
         {% for post in tag[1] %}
-        <li class="archive-item">
+        <li class="blog-item">
           <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%b %d, %Y" }}</time>
           <a href="{{ post.url | relative_url }}">{{ post.title }}</a>
         </li>

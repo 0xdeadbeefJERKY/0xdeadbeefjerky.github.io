@@ -1,4 +1,4 @@
-.archive-year {
+.blog-year {
   font-family: var(--font-display);
   font-size: 1.3rem;
   color: var(--accent-cyan);
@@ -9,12 +9,12 @@
   border-bottom: 1px solid var(--bg-tertiary);
 }
 
-.archive-list {
+.blog-list {
   list-style: none;
   padding: 0;
 }
 
-.archive-item {
+.blog-item {
   display: flex;
   gap: var(--space-md);
   align-items: baseline;
