@@ -8,6 +8,7 @@ gem "jekyll-seo-tag"
 gem "jekyll-sitemap"
 gem "jekyll-archives"
 gem "jekyll-paginate"
+gem "jekyll-feed"
 
 group :test do
   gem "html-proofer", "~> 3.18"
