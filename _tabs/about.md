@@ -17,6 +17,8 @@ I'm currently a security engineer on the detection and response team at a FAANG 
 * Member of an internal red team at a FAANG company, where I designed, led and executed covert red team operations.
 * Security consultant for about 5 years, where I took part in a wide spectrum of projects - external and internal network penetration testing, red team exercises and adversary simulation, social engineering, web/mobile/thick client application assessments, and much, much more. 
 
+These days, I'm particularly keen on leveraging generative AI and AI agents to solve real-world security problems at scale, as well as properly securing genAI environments and AI agent deployments. Something clicked when I first tried out ChatGPT in early 2023 and ever since then, I've been all aboard the genAI train.
+
 In my free time, when I'm not attempting to put a dent in my seemingly ever growing reading list (a vast majority of it courtesy of No Starch Press and cruising Twitter), I enjoy building and customizing mechanical keyboards, trying new craft beer, listening to heavy metal, spending quality time with my family and, occasionally, flying JetLevs. 
 
 <br>
