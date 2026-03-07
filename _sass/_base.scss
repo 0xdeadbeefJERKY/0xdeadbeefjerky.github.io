@@ -75,11 +75,13 @@ blockquote {
 }
 
 table {
+  display: block;
   width: 100%;
+  max-width: 100%;
   margin: var(--space-lg) 0;
   border: 1px solid var(--bg-tertiary);
   border-radius: var(--border-radius);
-  overflow: hidden;
+  overflow-x: auto;
 
   th, td {
     padding: var(--space-sm) var(--space-md);
