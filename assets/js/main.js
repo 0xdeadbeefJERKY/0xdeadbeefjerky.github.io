@@ -14,6 +14,41 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     }
 
+    // Tagline typewriter effect
+    var taglineEl = document.getElementById('tagline-text');
+    if (taglineEl) {
+        var fullText = taglineEl.textContent;
+        var deleteStr = 'an offensive security engineer';
+        var typeStr = 'a detection and response engineer passionate about AI';
+        var deleteStart = fullText.lastIndexOf(deleteStr);
+
+        if (deleteStart !== -1) {
+            var prefix = fullText.substring(0, deleteStart);
+            var deleteLen = deleteStr.length;
+            var charIndex = 0;
+
+            setTimeout(function () {
+                // Backspace phase
+                var backspace = setInterval(function () {
+                    charIndex++;
+                    taglineEl.textContent = fullText.substring(0, fullText.length - charIndex);
+                    if (charIndex >= deleteLen) {
+                        clearInterval(backspace);
+                        // Type phase
+                        var typeIndex = 0;
+                        var typeInterval = setInterval(function () {
+                            typeIndex++;
+                            taglineEl.textContent = prefix + typeStr.substring(0, typeIndex);
+                            if (typeIndex >= typeStr.length) {
+                                clearInterval(typeInterval);
+                            }
+                        }, 60);
+                    }
+                }, 40);
+            }, 1500);
+        }
+    }
+
     // Copy buttons on code blocks
     document.querySelectorAll('.highlight').forEach(function (block) {
         var btn = document.createElement('button');
