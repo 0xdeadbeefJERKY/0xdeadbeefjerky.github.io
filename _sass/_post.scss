@@ -250,22 +250,6 @@
   }
 }
 
-// Comments
-.post-comments {
-  margin-top: var(--space-2xl);
-  padding-top: var(--space-lg);
-  border-top: 1px solid var(--bg-tertiary);
-}
-
-.comments-title {
-  font-family: var(--font-heading);
-  font-size: 0.8rem;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  color: var(--text-secondary);
-  margin-bottom: var(--space-lg);
-}
-
 .post-share {
   margin-top: var(--space-lg);
   display: flex;
