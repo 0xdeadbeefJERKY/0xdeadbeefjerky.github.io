@@ -2,3 +2,8 @@
   - Created 404.html with cyberpunk theme (0x404 in Orbitron, magenta glow, "Signal Lost" heading, "Return to Base" link)
   - Added .error-404 styles to _sass/_utilities.scss (BEM structure, responsive font sizing, hover effects)
   - Note: Ruby/bundler not available on system; build/test must be verified via CI or local dev environment
+
+2026-03-07: Implemented Task 1.2 — robots.txt
+  - Created robots.txt at repo root with Jekyll front matter (empty YAML block)
+  - Contains User-agent: *, Allow: /, and Sitemap directive using {{ site.url }}/sitemap.xml
+  - Jekyll processes Liquid at build time to interpolate the actual site URL

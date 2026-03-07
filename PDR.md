@@ -13,15 +13,9 @@ The blog (Jekyll + custom cyberpunk dark theme) is missing several features comm
 - **Added** `.error-404` styles to `_sass/_utilities.scss`
 - GitHub Pages auto-serves `404.html` for unmatched URLs — no config needed
 
-### 1.2 — robots.txt
-- **Create** `robots.txt` at repo root with Jekyll front matter so `site.url` is interpolated:
-  ```
-  ---
-  ---
-  User-agent: *
-  Allow: /
-  Sitemap: {{ site.url }}/sitemap.xml
-  ```
+### 1.2 — robots.txt ✅ DONE
+- **Created** `robots.txt` at repo root with Jekyll front matter so `site.url` is interpolated into the Sitemap directive
+- GitHub Pages / Jekyll will process the Liquid `{{ site.url }}` at build time
 
 ### 1.3 — Open Graph Images per Post
 - **Modify** all 6 `_posts/*.md` files — add `image:` front matter
