@@ -6,6 +6,7 @@ description: >
 date: 2023-03-03 00:55:43-05:00
 categories: [Cloud, AWS] 
 tags: [aws, cloud, lab, walkthrough, lambda]
+image: /assets/img/cloudgoat.webp
 toc: true
 ---
 

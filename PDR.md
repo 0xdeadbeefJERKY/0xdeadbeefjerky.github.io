@@ -17,18 +17,11 @@ The blog (Jekyll + custom cyberpunk dark theme) is missing several features comm
 - **Created** `robots.txt` at repo root with Jekyll front matter so `site.url` is interpolated into the Sitemap directive
 - GitHub Pages / Jekyll will process the Liquid `{{ site.url }}` at build time
 
-### 1.3 — Open Graph Images per Post
-- **Modify** all 6 `_posts/*.md` files — add `image:` front matter
-  - Posts with existing images (CloudGoat): reuse `path: /assets/img/cloudgoat.webp`
-  - Other posts: use a site-wide fallback
-- **Modify** `_config.yml` — add default OG image in `defaults:` block:
-  ```yaml
-  - scope:
-      path: ''
-    values:
-      image: /assets/img/og-default.png
-  ```
-- **Create** `assets/img/og-default.png` — 1200×630 cyberpunk-themed site banner
+### 1.3 — Open Graph Images per Post ✅ DONE
+- **Created** `assets/img/og-default.png` — 1200×630 cyberpunk-themed banner (dark grid background, cyan/magenta "0xdeadbeefJERKY" title, subtitle, gradient accent bars)
+- **Modified** `_config.yml` — added `image: /assets/img/og-default.png` to posts defaults block
+- **Modified** 2 CloudGoat posts — added `image: /assets/img/cloudgoat.webp` front matter
+- Other 4 posts inherit the site-wide default OG image from `_config.yml` defaults
 - `jekyll-seo-tag` already reads `page.image` and generates `og:image` / `twitter:image` — no template changes needed
 
 ### 1.4 — Lazy Loading Images
