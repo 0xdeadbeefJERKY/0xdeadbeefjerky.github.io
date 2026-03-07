@@ -95,6 +95,16 @@ p code, li code, td code, h1 code, h2 code, h3 code, h4 code {
   &:hover .copy-btn {
     opacity: 1;
   }
+
+  .copy-btn:focus-visible {
+    opacity: 1;
+  }
+
+  @media (hover: none) {
+    .copy-btn {
+      opacity: 1;
+    }
+  }
 }
 
 // Rouge syntax colors — cyberpunk theme

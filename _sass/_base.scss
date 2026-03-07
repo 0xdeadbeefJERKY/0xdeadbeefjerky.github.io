@@ -74,14 +74,16 @@ blockquote {
   }
 }
 
+.table-wrap {
+  overflow-x: auto;
+  margin: var(--space-lg) 0;
+}
+
 table {
-  display: block;
   width: 100%;
   max-width: 100%;
-  margin: var(--space-lg) 0;
   border: 1px solid var(--bg-tertiary);
   border-radius: var(--border-radius);
-  overflow-x: auto;
 
   th, td {
     padding: var(--space-sm) var(--space-md);
@@ -107,4 +109,33 @@ table {
 
 del {
   color: var(--text-secondary);
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+  box-shadow: 0 0 8px rgba(0, 255, 240, 0.3);
+}
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--space-md);
+  z-index: 9999;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--accent-cyan);
+  color: var(--bg-primary);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  border-radius: var(--border-radius);
+  text-decoration: none;
+
+  &:focus {
+    top: var(--space-sm);
+  }
 }

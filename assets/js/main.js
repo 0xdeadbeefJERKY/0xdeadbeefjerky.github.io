@@ -1,15 +1,44 @@
 // Nav toggle
 document.addEventListener('DOMContentLoaded', function () {
+    function trapFocus(modal) {
+        var focusable = modal.querySelectorAll('button, input, a, [tabindex]:not([tabindex="-1"])');
+        var first = focusable[0];
+        var last = focusable[focusable.length - 1];
+        modal.addEventListener('keydown', function (e) {
+            if (e.key !== 'Tab') return;
+            if (e.shiftKey) {
+                if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+            } else {
+                if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+            }
+        });
+    }
+
+    function onScroll(fn) {
+        var ticking = false;
+        window.addEventListener('scroll', function () {
+            if (!ticking) {
+                ticking = true;
+                requestAnimationFrame(function () {
+                    fn();
+                    ticking = false;
+                });
+            }
+        }, { passive: true });
+    }
+
     var toggle = document.querySelector('.nav-toggle');
     var links = document.querySelector('.nav-links');
     if (toggle && links) {
         toggle.addEventListener('click', function () {
             links.classList.toggle('open');
+            toggle.setAttribute('aria-expanded', String(links.classList.contains('open')));
         });
         // Close nav when clicking a link (mobile)
         links.querySelectorAll('a').forEach(function (a) {
             a.addEventListener('click', function () {
                 links.classList.remove('open');
+                toggle.setAttribute('aria-expanded', 'false');
             });
         });
     }
@@ -18,8 +47,8 @@ document.addEventListener('DOMContentLoaded', function () {
     var taglineEl = document.getElementById('tagline-text');
     if (taglineEl) {
         var fullText = taglineEl.textContent;
-        var deleteStr = 'an offensive security engineer';
-        var typeStr = 'a detection and response engineer with a passion for generative AI and AI agents';
+        var deleteStr = taglineEl.getAttribute('data-delete') || '';
+        var typeStr = taglineEl.getAttribute('data-type') || '';
         var deleteStart = fullText.lastIndexOf(deleteStr);
 
         if (deleteStart !== -1) {
@@ -27,25 +56,30 @@ document.addEventListener('DOMContentLoaded', function () {
             var deleteLen = deleteStr.length;
             var charIndex = 0;
 
-            setTimeout(function () {
-                // Backspace phase
-                var backspace = setInterval(function () {
-                    charIndex++;
-                    taglineEl.textContent = fullText.substring(0, fullText.length - charIndex);
-                    if (charIndex >= deleteLen) {
-                        clearInterval(backspace);
-                        // Type phase
-                        var typeIndex = 0;
-                        var typeInterval = setInterval(function () {
-                            typeIndex++;
-                            taglineEl.textContent = prefix + typeStr.substring(0, typeIndex);
-                            if (typeIndex >= typeStr.length) {
-                                clearInterval(typeInterval);
-                            }
-                        }, 60);
-                    }
-                }, 40);
-            }, 1500);
+            var prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            if (prefersReducedMotion) {
+                taglineEl.textContent = fullText.substring(0, deleteStart) + typeStr;
+            } else {
+                setTimeout(function () {
+                    // Backspace phase
+                    var backspace = setInterval(function () {
+                        charIndex++;
+                        taglineEl.textContent = fullText.substring(0, fullText.length - charIndex);
+                        if (charIndex >= deleteLen) {
+                            clearInterval(backspace);
+                            // Type phase
+                            var typeIndex = 0;
+                            var typeInterval = setInterval(function () {
+                                typeIndex++;
+                                taglineEl.textContent = prefix + typeStr.substring(0, typeIndex);
+                                if (typeIndex >= typeStr.length) {
+                                    clearInterval(typeInterval);
+                                }
+                            }, 60);
+                        }
+                    }, 40);
+                }, 1500);
+            }
         }
     }
 
@@ -64,6 +98,11 @@ document.addEventListener('DOMContentLoaded', function () {
                 setTimeout(function () {
                     btn.textContent = 'Copy';
                     btn.classList.remove('copied');
+                }, 2000);
+            }).catch(function () {
+                btn.textContent = 'Failed';
+                setTimeout(function () {
+                    btn.textContent = 'Copy';
                 }, 2000);
             });
         });
@@ -134,7 +173,7 @@ document.addEventListener('DOMContentLoaded', function () {
             }
         }
 
-        window.addEventListener('scroll', updateActiveToc, { passive: true });
+        onScroll(updateActiveToc);
         updateActiveToc();
     }
 
@@ -151,7 +190,7 @@ document.addEventListener('DOMContentLoaded', function () {
             progressBar.style.width = pct + '%';
             progressBar.setAttribute('aria-valuenow', Math.round(pct));
         }
-        window.addEventListener('scroll', updateProgress, { passive: true });
+        onScroll(updateProgress);
         updateProgress();
     }
 
@@ -175,6 +214,7 @@ document.addEventListener('DOMContentLoaded', function () {
             var results = document.getElementById('search-results');
             if (results) results.innerHTML = '';
         }
+        if (searchToggle) searchToggle.focus();
     }
 
     if (searchToggle) {
@@ -189,6 +229,8 @@ document.addEventListener('DOMContentLoaded', function () {
         searchOverlay.addEventListener('click', function (e) {
             if (e.target === searchOverlay) closeSearch();
         });
+        var searchModal = searchOverlay.querySelector('.search-modal');
+        if (searchModal) trapFocus(searchModal);
     }
 
     document.addEventListener('keydown', function (e) {

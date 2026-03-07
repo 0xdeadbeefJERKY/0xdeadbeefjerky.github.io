@@ -3,9 +3,10 @@
   <span class="label">Share:</span>
   {% assign full_url = page.url | prepend: site.url %}
   {% for platform in site.data.share.platforms %}
-    {% assign share_url = platform.link | replace: 'URL', full_url | replace: 'TITLE', page.title %}
+    {% assign encoded_title = page.title | url_encode %}
+    {% assign share_url = platform.link | replace: 'URL', full_url | replace: 'TITLE', encoded_title %}
     <a href="{{ share_url }}" target="_blank" rel="noopener" aria-label="Share on {{ platform.type }}">
-      <i class="{{ platform.icon }}"></i>
+      <i class="{{ platform.icon }}" aria-hidden="true"></i>
     </a>
   {% endfor %}
 </div>

@@ -7,6 +7,7 @@
   height: var(--nav-height);
   background: rgba(10, 10, 15, 0.9);
   backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--bg-tertiary);
 
   .container {

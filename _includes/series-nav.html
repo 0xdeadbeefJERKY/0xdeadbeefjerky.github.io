@@ -3,17 +3,17 @@
 {% if series_posts.size > 1 %}
 <div class="series-nav">
   <div class="series-nav__header">
-    <i class="fas fa-layer-group"></i>
+    <i class="fas fa-layer-group" aria-hidden="true"></i>
     <span class="series-nav__label">Series:</span>
-    <span class="series-nav__name">{{ series_name }}</span>
+    <span class="series-nav__name">{{ series_name | escape }}</span>
   </div>
   <ol class="series-nav__list">
     {% for spost in series_posts %}
     <li class="series-nav__item {% if spost.url == page.url %}series-nav__item--current{% endif %}">
       {% if spost.url == page.url %}
-        <span>Part {{ forloop.index }}: {{ spost.title }}</span>
+        <span>Part {{ forloop.index }}: {{ spost.title | escape }}</span>
       {% else %}
-        <a href="{{ spost.url | relative_url }}">Part {{ forloop.index }}: {{ spost.title }}</a>
+        <a href="{{ spost.url | relative_url }}">Part {{ forloop.index }}: {{ spost.title | escape }}</a>
       {% endif %}
     </li>
     {% endfor %}

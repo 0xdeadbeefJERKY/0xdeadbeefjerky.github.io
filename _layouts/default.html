@@ -4,15 +4,17 @@
   {% include head.html %}
 </head>
 <body>
+  <a href="#main-content" class="skip-link">Skip to content</a>
   <div class="site-wrapper">
     {% include nav.html %}
-    <main>
+    <main id="main-content">
       {{ content }}
     </main>
     {% include footer.html %}
     {% include search.html %}
   </div>
   <script src="{{ '/assets/js/main.js' | relative_url }}"></script>
-  <script src="https://unpkg.com/simple-jekyll-search@1.10.0/dest/simple-jekyll-search.min.js"></script>
+  <script src="https://unpkg.com/simple-jekyll-search@1.10.0/dest/simple-jekyll-search.min.js"
+          integrity="sha384-UN+lyciv8Ta643YxZ9sY2tdTSmk3KE61Qq84ZIXG9NRTbD9+NFXy38m9h6Exxx3n" crossorigin="anonymous"></script>
 </body>
 </html>

@@ -10,11 +10,11 @@
   <span class="separator">|</span>
   <span>{{ read_time }} min read</span>
 </div>
-<div class="post-card__tags" style="margin-top: var(--space-sm)">
+<div class="post-card__tags post-meta__tags">
   {% for cat in page.categories %}
-  <a href="{{ '/categories/' | append: cat | downcase | relative_url }}/" class="cat-pill">{{ cat }}</a>
+  <a href="{{ '/categories/' | append: cat | downcase | relative_url }}/" class="cat-pill">{{ cat | escape }}</a>
   {% endfor %}
   {% for tag in page.tags %}
-  <a href="{{ '/tags/' | append: tag | downcase | relative_url }}/" class="tag-pill">{{ tag }}</a>
+  <a href="{{ '/tags/' | append: tag | downcase | relative_url }}/" class="tag-pill">{{ tag | escape }}</a>
   {% endfor %}
 </div>

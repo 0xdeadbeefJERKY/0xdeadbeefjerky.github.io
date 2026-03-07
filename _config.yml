@@ -4,14 +4,14 @@ baseurl: ''
 lang: en
 timezone: America/New_York
 
-title: 0xdeadbeefJERKY Blog
+title: 0xdeadbeefJERKY
 tagline: Random thoughts and adventures of an offensive security engineer
 
 description: >-
   A cybersecurity blog with a specific focus on offensive security tailored for both
   those breaking into the industry and veterans alike.
 
-url: 'https://0xdeadbeefjerky.github.io'
+url: 'https://0xdeadbeefjerky.com'
 
 github:
   username: 0xdeadbeefJERKY
@@ -33,6 +33,7 @@ avatar: /assets/img/mehome.jpg
 toc: true
 
 paginate: 10
+paginate_path: "/page:num/"
 
 kramdown:
   syntax_highlighter: rouge
@@ -75,10 +76,9 @@ exclude:
   - README.md
   - CHANGELOG.md
   - LICENSE
-  - gulpfile.js
-  - node_modules
-  - package*.json
   - CLAUDE.md
+  - PDR.md
+  - SECURITY.md
 
 jekyll-archives:
   enabled: [categories, tags]

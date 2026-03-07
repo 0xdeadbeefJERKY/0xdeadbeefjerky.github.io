@@ -18,27 +18,15 @@
     "name": {{ site.social.name | jsonify }},
     "url": {{ site.url | jsonify }}
   },
-  "datePublished": "{{ page.date | date_to_xmlschema }}",
-  {% if page.last_modified_at %}
-  "dateModified": "{{ page.last_modified_at | date_to_xmlschema }}",
-  {% endif %}
-  "wordCount": {{ sd_words }},
-  "timeRequired": "PT{{ sd_minutes }}M",
-  {% if page.categories.first %}
-  "articleSection": {{ page.categories | first | jsonify }},
-  {% endif %}
-  {% if page.tags.size > 0 %}
-  "keywords": {{ page.tags | join: ", " | jsonify }},
-  {% endif %}
-  "url": "{{ site.url }}{{ page.url }}",
-  {% if page.image %}
-  {% if page.image.path %}
-  "image": "{{ site.url }}{{ page.image.path }}",
-  {% else %}
-  "image": "{{ site.url }}{{ page.image }}",
-  {% endif %}
-  {% endif %}
-  "breadcrumb": {
+  "datePublished": "{{ page.date | date_to_xmlschema }}"
+  {%- if page.last_modified_at %},"dateModified": "{{ page.last_modified_at | date_to_xmlschema }}"{% endif %}
+  ,"wordCount": {{ sd_words }}
+  ,"timeRequired": "PT{{ sd_minutes }}M"
+  {%- if page.categories.first %},"articleSection": {{ page.categories | first | jsonify }}{% endif %}
+  {%- if page.tags.size > 0 %},"keywords": {{ page.tags | join: ", " | jsonify }}{% endif %}
+  ,"url": "{{ site.url }}{{ page.url }}"
+  {%- if page.image %}{%- if page.image.path %},"image": "{{ site.url }}{{ page.image.path }}"{%- else %},"image": "{{ site.url }}{{ page.image }}"{%- endif %}{%- endif %}
+  ,"breadcrumb": {
     "@type": "BreadcrumbList",
     "itemListElement": [
       {

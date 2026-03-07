@@ -13,20 +13,19 @@ layout: default
       {% for tag in sorted_tags %}
       <li class="taxonomy-list__item">
         <a href="{{ '/tags/' | append: tag[0] | downcase | relative_url }}/">
-          {{ tag[0] }} <span class="count">({{ tag[1].size }})</span>
+          {{ tag[0] | escape }} <span class="count">({{ tag[1].size }})</span>
         </a>
       </li>
       {% endfor %}
     </ul>
 
-    {% assign sorted_tags = site.tags | sort %}
     {% for tag in sorted_tags %}
-      <h2 class="blog-year">{{ tag[0] }}</h2>
+      <h2 class="blog-year">{{ tag[0] | escape }}</h2>
       <ul class="blog-list">
         {% for post in tag[1] %}
         <li class="blog-item">
           <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%b %d, %Y" }}</time>
-          <a href="{{ post.url | relative_url }}">{{ post.title }}</a>
+          <a href="{{ post.url | relative_url }}">{{ post.title | escape }}</a>
         </li>
         {% endfor %}
       </ul>

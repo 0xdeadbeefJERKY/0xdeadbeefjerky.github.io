@@ -3,13 +3,13 @@
     <div class="footer-social">
       {% for entry in site.data.contact %}
         {% if entry.type == 'github' %}
-          <a href="https://github.com/{{ site.github.username }}" target="_blank" rel="noopener" aria-label="GitHub"><i class="{{ entry.icon }}"></i></a>
-        {% elsif entry.type == 'twitter' %}
-          <a href="https://twitter.com/{{ site.twitter.username }}" target="_blank" rel="noopener" aria-label="Twitter"><i class="{{ entry.icon }}"></i></a>
+          <a href="https://github.com/{{ site.github.username }}" target="_blank" rel="noopener" aria-label="GitHub"><i class="{{ entry.icon }}" aria-hidden="true"></i></a>
+        {% elsif entry.type == 'twitter' or entry.type == 'x' %}
+          <a href="https://x.com/{{ site.twitter.username }}" target="_blank" rel="noopener" aria-label="X (Twitter)"><i class="{{ entry.icon }}" aria-hidden="true"></i></a>
         {% elsif entry.type == 'email' %}
-          <a href="mailto:{{ site.social.email }}" aria-label="Email"><i class="{{ entry.icon }}"></i></a>
+          <a href="mailto:{{ site.social.email }}" aria-label="Email"><i class="{{ entry.icon }}" aria-hidden="true"></i></a>
         {% elsif entry.type == 'rss' %}
-          <a href="{{ '/feed.xml' | relative_url }}" aria-label="RSS"><i class="{{ entry.icon }}"></i></a>
+          <a href="{{ '/feed.xml' | relative_url }}" aria-label="RSS"><i class="{{ entry.icon }}" aria-hidden="true"></i></a>
         {% endif %}
       {% endfor %}
     </div>

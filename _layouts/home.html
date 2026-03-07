@@ -12,7 +12,7 @@ layout: default
   </div>
 
   {% if paginator.total_pages > 1 %}
-  <div class="pagination">
+  <nav class="pagination" aria-label="Pagination">
     {% if paginator.previous_page %}
       <a href="{{ paginator.previous_page_path | relative_url }}">&laquo; Newer</a>
     {% endif %}
@@ -32,6 +32,6 @@ layout: default
     {% if paginator.next_page %}
       <a href="{{ paginator.next_page_path | relative_url }}">Older &raquo;</a>
     {% endif %}
-  </div>
+  </nav>
   {% endif %}
 </div>

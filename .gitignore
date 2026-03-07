@@ -3,10 +3,6 @@
 !.git*
 !.editorconfig
 !.nojekyll
-!.husky
-!.commitlintrc.json
-!.versionrc.json
-!.stylelintrc.json
 
 # bundler cache
 _site

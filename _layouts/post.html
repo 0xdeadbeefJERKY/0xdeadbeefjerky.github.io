@@ -8,7 +8,7 @@ layout: default
     <article>
       {% include breadcrumbs.html %}
       <header class="post-header">
-        <h1 class="post-title">{{ page.title }}</h1>
+        <h1 class="post-title">{{ page.title | escape }}</h1>
         {% include post-meta.html %}
       </header>
       {% if page.series %}{% include series-nav.html %}{% endif %}
@@ -17,16 +17,16 @@ layout: default
       </div>
       <div class="post-tags">
         {% for tag in page.tags %}
-          <a href="{{ '/tags/' | append: tag | downcase | relative_url }}/" class="tag-pill">{{ tag }}</a>
+          <a href="{{ '/tags/' | append: tag | downcase | relative_url }}/" class="tag-pill">{{ tag | escape }}</a>
         {% endfor %}
       </div>
       {% include related-posts.html %}
       {% include share.html %}
-      <nav class="post-nav">
+      <nav class="post-nav" aria-label="Post navigation">
         {% if page.previous %}
         <a href="{{ page.previous.url | relative_url }}" class="post-nav__link">
           <div class="label">&laquo; Previous</div>
-          <div class="title">{{ page.previous.title }}</div>
+          <div class="title">{{ page.previous.title | escape }}</div>
         </a>
         {% else %}
         <div></div>
@@ -34,7 +34,7 @@ layout: default
         {% if page.next %}
         <a href="{{ page.next.url | relative_url }}" class="post-nav__link post-nav__link--next">
           <div class="label">Next &raquo;</div>
-          <div class="title">{{ page.next.title }}</div>
+          <div class="title">{{ page.next.title | escape }}</div>
         </a>
         {% endif %}
       </nav>

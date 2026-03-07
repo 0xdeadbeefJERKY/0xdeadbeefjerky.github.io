@@ -24,11 +24,11 @@
   <div class="related-posts__grid">
     {% for post in related limit:3 %}
     <a href="{{ post.url | relative_url }}" class="related-post-card">
-      <div class="related-post-card__title">{{ post.title }}</div>
+      <div class="related-post-card__title">{{ post.title | escape }}</div>
       <div class="related-post-card__meta">
         <time>{{ post.date | date: "%b %d, %Y" }}</time>
         {% if post.categories[0] %}
-        <span class="cat-pill">{{ post.categories[0] }}</span>
+        <span class="cat-pill">{{ post.categories[0] | escape }}</span>
         {% endif %}
       </div>
     </a>
