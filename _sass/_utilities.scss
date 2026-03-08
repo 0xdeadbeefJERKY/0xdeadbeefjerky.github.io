@@ -1,0 +1,147 @@
+// Preserve for existing posts
+.center-image {
+  display: block;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  border: 0;
+}
+
+// Print stylesheet
+@media print {
+  .site-nav,
+  .site-footer,
+  .toc-wrapper,
+  .post-nav,
+  .post-share,
+  .post-tags,
+  .related-posts,
+  .reading-progress,
+  .breadcrumbs,
+  .copy-btn,
+  .series-nav,
+  .search-overlay {
+    display: none !important;
+  }
+
+  body {
+    background: #fff;
+    color: #000;
+    font-size: 11pt;
+    line-height: 1.6;
+  }
+
+  main {
+    padding-top: 0;
+  }
+
+  .container,
+  .post-layout,
+  .content-wrapper {
+    max-width: 100%;
+    padding: 0;
+    display: block;
+  }
+
+  .post-title {
+    font-size: 18pt;
+    color: #000;
+  }
+
+  .post-content {
+    h2, h3, h4 {
+      border-left: none;
+      padding-left: 0;
+      color: #000;
+    }
+
+    a {
+      color: #000;
+      border-bottom: none;
+
+      &::after {
+        content: " (" attr(href) ")";
+        font-size: 0.8em;
+        color: #555;
+      }
+
+      &[href^="#"]::after {
+        content: "";
+      }
+    }
+  }
+
+  .highlight {
+    border: 1px solid #ccc;
+    border-left: 3px solid #333;
+    background: #f5f5f5 !important;
+
+    pre, code {
+      color: #000 !important;
+      background: #f5f5f5 !important;
+    }
+  }
+
+  .prompt-tip, .prompt-info, .prompt-warning, .prompt-danger {
+    background: #f9f9f9 !important;
+    color: #000;
+  }
+}
+
+// Custom 404 page
+.error-404 {
+  text-align: center;
+  padding: 6rem 1rem;
+  max-width: 600px;
+  margin: 0 auto;
+
+  &__code {
+    font-family: var(--font-display);
+    font-size: clamp(4rem, 10vw, 8rem);
+    font-weight: 900;
+    color: var(--accent-magenta);
+    text-shadow: 0 0 20px rgba(255, 0, 170, 0.6), 0 0 60px rgba(255, 0, 170, 0.3);
+    line-height: 1;
+    margin-bottom: 1rem;
+  }
+
+  &__heading {
+    font-family: var(--font-heading);
+    font-size: 1.5rem;
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+  }
+
+  &__message {
+    color: var(--text-secondary);
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+
+  &__link {
+    display: inline-block;
+    padding: 0.75rem 2rem;
+    border: 1px solid var(--accent-cyan);
+    color: var(--accent-cyan);
+    font-family: var(--font-heading);
+    text-decoration: none;
+    text-transform: uppercase;
+    font-size: 0.875rem;
+    letter-spacing: 0.05em;
+    transition: background 0.2s, box-shadow 0.2s;
+
+    &:hover {
+      background: rgba(0, 255, 240, 0.1);
+      box-shadow: 0 0 12px rgba(0, 255, 240, 0.3);
+    }
+  }
+}

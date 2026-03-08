@@ -6,7 +6,11 @@ description: >
 date: 2023-06-21 00:15:40-04:00
 categories: [Cloud, AWS] 
 tags: [aws, cloud, lab, walkthrough, lambda, response]
+image: /assets/img/cloudgoat.webp
 toc: true
+series:
+  name: "CloudGoat Vulnerable Lambda"
+  part: 2
 ---
 
 * [Part 1](https://0xdeadbeefjerky.com/posts/cloudgoat-lambda-walkthrough/) - 

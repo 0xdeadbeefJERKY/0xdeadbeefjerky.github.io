@@ -1,0 +1,23 @@
+<nav class="site-nav" aria-label="Main navigation">
+  <div class="container">
+    <a href="{{ '/' | relative_url }}" class="site-brand">
+      {% if site.avatar %}<img src="{{ site.avatar | relative_url }}" alt="{{ site.social.name }}" class="site-avatar" width="36" height="36">{% endif %}
+      <span>{{ site.title | escape }}</span>
+    </a>
+    <button class="nav-toggle" aria-label="Toggle navigation" aria-expanded="false">
+      <span></span>
+      <span></span>
+      <span></span>
+    </button>
+    <div class="nav-links">
+      <a href="{{ '/' | relative_url }}" {% if page.url == '/' %}class="active"{% endif %}>Home</a>
+      {% assign sorted_tabs = site.tabs | sort: 'order' %}
+      {% for tab in sorted_tabs %}
+        <a href="{{ tab.url | relative_url }}" {% if page.url == tab.url %}class="active"{% endif %}>{{ tab.title | capitalize | escape }}</a>
+      {% endfor %}
+      <button class="search-toggle" id="search-toggle" aria-label="Search">
+        <i class="fas fa-search" aria-hidden="true"></i>
+      </button>
+    </div>
+  </div>
+</nav>

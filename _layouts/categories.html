@@ -1,0 +1,24 @@
+---
+layout: default
+---
+
+<div class="container">
+  <div class="content-wrapper">
+    <header class="post-header">
+      <h1 class="post-title">Categories</h1>
+    </header>
+
+    {% assign sorted_cats = site.categories | sort %}
+    {% for cat in sorted_cats %}
+      <h2 class="blog-year">{{ cat[0] | escape }} <small>({{ cat[1].size }})</small></h2>
+      <ul class="blog-list">
+        {% for post in cat[1] %}
+        <li class="blog-item">
+          <time datetime="{{ post.date | date_to_xmlschema }}">{{ post.date | date: "%b %d, %Y" }}</time>
+          <a href="{{ post.url | relative_url }}">{{ post.title | escape }}</a>
+        </li>
+        {% endfor %}
+      </ul>
+    {% endfor %}
+  </div>
+</div>

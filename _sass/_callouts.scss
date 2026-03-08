@@ -1,0 +1,71 @@
+// Chirpy-compatible callout classes
+// Used as: > content text
+//          {: .prompt-tip }
+
+.prompt-tip, .prompt-info, .prompt-warning, .prompt-danger {
+  position: relative;
+  padding: var(--space-md) var(--space-lg);
+  padding-left: calc(var(--space-lg) + 24px);
+  margin: var(--space-lg) 0;
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  border-left-width: 3px;
+  border-left-style: solid;
+  background: var(--bg-secondary);
+
+  &::before {
+    font-family: 'Font Awesome 6 Free', 'Font Awesome 5 Free';
+    font-weight: 900;
+    position: absolute;
+    left: var(--space-md);
+    top: var(--space-md);
+    font-size: 0.9rem;
+  }
+
+  p:last-child {
+    margin-bottom: 0;
+  }
+
+  code {
+    background: rgba(255, 255, 255, 0.05);
+  }
+}
+
+.prompt-tip {
+  border-left-color: var(--accent-cyan);
+  background: rgba(0, 255, 240, 0.04);
+
+  &::before {
+    content: '\f120'; // terminal icon
+    color: var(--accent-cyan);
+  }
+}
+
+.prompt-info {
+  border-left-color: var(--accent-blue);
+  background: rgba(77, 124, 255, 0.04);
+
+  &::before {
+    content: '\f05a'; // info-circle
+    color: var(--accent-blue);
+  }
+}
+
+.prompt-warning {
+  border-left-color: var(--accent-yellow);
+  background: rgba(255, 224, 51, 0.04);
+
+  &::before {
+    content: '\f071'; // exclamation-triangle
+    color: var(--accent-yellow);
+  }
+}
+
+.prompt-danger {
+  border-left-color: var(--accent-red);
+  background: rgba(255, 51, 85, 0.04);
+
+  &::before {
+    content: '\f714'; // skull-crossbones
+    color: var(--accent-red);
+  }
+}

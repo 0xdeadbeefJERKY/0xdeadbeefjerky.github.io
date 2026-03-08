@@ -1,0 +1,141 @@
+body {
+  background-color: var(--bg-primary);
+  overflow-x: hidden;
+}
+
+a {
+  color: var(--accent-blue);
+  transition: color var(--transition-fast);
+
+  &:hover {
+    color: var(--accent-cyan);
+  }
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--bg-tertiary);
+  margin: var(--space-xl) 0;
+}
+
+::selection {
+  background: rgba(0, 255, 240, 0.2);
+  color: var(--accent-cyan);
+}
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--bg-tertiary);
+  border-radius: 4px;
+
+  &:hover {
+    background: var(--text-secondary);
+  }
+}
+
+img {
+  border-radius: var(--border-radius);
+}
+
+ul, ol {
+  padding-left: var(--space-xl);
+}
+
+ul {
+  list-style: disc;
+}
+
+ol {
+  list-style: decimal;
+}
+
+li {
+  margin-bottom: var(--space-xs);
+}
+
+blockquote {
+  border-left: 3px solid var(--accent-cyan);
+  padding: var(--space-md) var(--space-lg);
+  margin: var(--space-lg) 0;
+  background: var(--bg-secondary);
+  border-radius: 0 var(--border-radius) var(--border-radius) 0;
+  color: var(--text-secondary);
+
+  p:last-child {
+    margin-bottom: 0;
+  }
+}
+
+.table-wrap {
+  overflow-x: auto;
+  margin: var(--space-lg) 0;
+}
+
+table {
+  width: 100%;
+  max-width: 100%;
+  border: 1px solid var(--bg-tertiary);
+  border-radius: var(--border-radius);
+
+  th, td {
+    padding: var(--space-sm) var(--space-md);
+    text-align: left;
+    border-bottom: 1px solid var(--bg-tertiary);
+  }
+
+  th {
+    background: var(--bg-secondary);
+    font-family: var(--font-heading);
+    font-weight: 600;
+    color: var(--accent-cyan);
+  }
+
+  tr:last-child td {
+    border-bottom: none;
+  }
+
+  tr:hover td {
+    background: rgba(26, 26, 46, 0.5);
+  }
+}
+
+del {
+  color: var(--text-secondary);
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 2px solid var(--accent-cyan);
+  outline-offset: 2px;
+  box-shadow: 0 0 8px rgba(0, 255, 240, 0.3);
+}
+
+.skip-link {
+  position: absolute;
+  top: -100%;
+  left: var(--space-md);
+  z-index: 9999;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--accent-cyan);
+  color: var(--bg-primary);
+  font-family: var(--font-heading);
+  font-weight: 600;
+  border-radius: var(--border-radius);
+  text-decoration: none;
+
+  &:focus {
+    top: var(--space-sm);
+  }
+}

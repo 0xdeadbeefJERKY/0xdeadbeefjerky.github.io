@@ -5,6 +5,7 @@ date:   2017-09-23 15:16:00 -0400
 categories: [CTF Writeups] 
 tags: [csaw, exploit dev, ctf]
 toc: true
+image: /assets/img/og-default.png
 ---
 
 Each year, the cybersecurity students of New York University (NYU) host the [Cyber Security Awareness Week (CSAW) capture-the-flag (CTF) competition](https://csaw.engineering.nyu.edu/ctf){:target="_blank"}, <u>the largest student-run cybersecurity event in the world</u>. This is a jeopardy-style CTF event with a variety of challenge types and thousands of competitors, comprised of both students and professionals. In this post, I'll cover the first 'pwn' challenge of the competition, 'pilot'. As the category name appropriately indicates, in order to obtain the flag, you need to pwn the target (in this case, a binary).

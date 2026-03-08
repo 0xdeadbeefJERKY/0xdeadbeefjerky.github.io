@@ -1,0 +1,14 @@
+<nav class="breadcrumbs" aria-label="Breadcrumb">
+  <ol class="breadcrumbs__list">
+    <li class="breadcrumbs__item"><a href="{{ '/' | relative_url }}">Home</a></li>
+    {% if page.categories[0] %}
+    {% assign bc_category = page.categories[0] %}
+    <li class="breadcrumbs__item"><a href="{{ '/categories/' | append: bc_category | downcase | append: '/' | relative_url }}">{{ bc_category | escape }}</a></li>
+    {% endif %}
+    {% assign bc_title = page.title %}
+    {% if bc_title.size > 40 %}
+      {% assign bc_title = bc_title | truncate: 40 %}
+    {% endif %}
+    <li class="breadcrumbs__item breadcrumbs__item--current" aria-current="page">{{ bc_title | escape }}</li>
+  </ol>
+</nav>

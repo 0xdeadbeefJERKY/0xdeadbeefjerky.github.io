@@ -5,6 +5,7 @@ date:   2019-01-01 22:30:00 -0400
 categories: [Training, Windows Internals] 
 tags: [windows, internals, training]
 toc: true
+image: /assets/img/og-default.png
 ---
 
 ## TL;DR
