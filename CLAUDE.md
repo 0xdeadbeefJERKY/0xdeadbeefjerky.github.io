@@ -18,13 +18,17 @@ docker run -d --name jekyll-preview -v $(pwd):/srv/jekyll -p 4001:4000 ruby:3.1-
 # Build inside a running container
 docker exec jekyll-preview bash -c "cd /srv/jekyll && bundle exec jekyll build -d _site"
 
-# Test (HTML validation — also runs in CI)
-docker exec jekyll-preview bash -c "cd /srv/jekyll && bundle exec htmlproofer _site --disable-external --check-html --allow_hash_href"
+# Production build (enables Google Analytics, etc.)
+docker exec jekyll-preview bash -c "cd /srv/jekyll && JEKYLL_ENV=production bundle exec jekyll build -d _site"
+
+# Test (HTML validation — must match CI flags)
+docker exec jekyll-preview bash -c "cd /srv/jekyll && bundle exec htmlproofer _site --disable-external --allow-hash-href"
+
+# Restart after _config.yml changes (config is not picked up by --watch)
+docker restart jekyll-preview
 ```
 
 Note: The container git ownership warning (`fatal: detected dubious ownership`) is harmless — it only affects the `posts-lastmod-hook.rb` plugin's ability to read git history inside the container.
-
-After modifying `_config.yml`, the serve process must be restarted (config changes are not picked up by `--watch`).
 
 ## Architecture
 
@@ -100,6 +104,6 @@ series:                              # optional, for multi-part posts
 
 - Dark-only theme (no light mode toggle).
 - `.editorconfig`: 2-space indentation (4-space for JS), UTF-8, LF line endings.
-- CI runs on Ruby 3.1 via GitHub Actions: builds site, runs htmlproofer, deploys to Pages.
+- CI runs on Ruby 3.1 via GitHub Actions: builds site, runs htmlproofer, deploys to Pages. Triggers on push to `main` or `master`.
 - Custom domain configured in `CNAME` file.
 - Data-driven social sharing (`_data/share.yml`) and footer contacts (`_data/contact.yml`).
