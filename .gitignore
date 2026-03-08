@@ -14,3 +14,6 @@ vendor
 # npm dependencies
 node_modules
 package-lock.json
+PRD.md
+progress.txt
+ralph-loop.sh
