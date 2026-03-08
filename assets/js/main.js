@@ -27,6 +27,14 @@ document.addEventListener('DOMContentLoaded', function () {
         }, { passive: true });
     }
 
+    // Wrap bare tables in .table-wrap for horizontal scroll on overflow
+    document.querySelectorAll('.post-content > table').forEach(function (table) {
+        var wrapper = document.createElement('div');
+        wrapper.className = 'table-wrap';
+        table.parentNode.insertBefore(wrapper, table);
+        wrapper.appendChild(table);
+    });
+
     var toggle = document.querySelector('.nav-toggle');
     var links = document.querySelector('.nav-links');
     if (toggle && links) {

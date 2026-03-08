@@ -81,7 +81,6 @@ blockquote {
 
 table {
   width: 100%;
-  max-width: 100%;
   border: 1px solid var(--bg-tertiary);
   border-radius: var(--border-radius);
 
@@ -89,6 +88,7 @@ table {
     padding: var(--space-sm) var(--space-md);
     text-align: left;
     border-bottom: 1px solid var(--bg-tertiary);
+    word-break: break-word;
   }
 
   th {
