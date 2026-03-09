@@ -1,4 +1,10 @@
-// Nav toggle
+// GA4 event helper — no-ops when analytics isn't loaded
+function gaEvent(name, params) {
+    if (typeof gtag === 'function') {
+        gtag('event', name, params || {});
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function () {
     function trapFocus(modal) {
         var focusable = modal.querySelectorAll('button, input, a, [tabindex]:not([tabindex="-1"])');
@@ -101,6 +107,7 @@ document.addEventListener('DOMContentLoaded', function () {
             if (!code) return;
             var text = code.innerText;
             navigator.clipboard.writeText(text).then(function () {
+                gaEvent('code_copy', { code_length: text.length });
                 btn.textContent = 'Copied!';
                 btn.classList.add('copied');
                 setTimeout(function () {
@@ -136,6 +143,9 @@ document.addEventListener('DOMContentLoaded', function () {
                     a.href = '#' + h.id;
                     a.textContent = h.textContent;
                     li.appendChild(a);
+                    a.addEventListener('click', function () {
+                        gaEvent('toc_click', { heading: h.textContent });
+                    });
                     if (h.tagName === 'H3') {
                         li.style.paddingLeft = '1rem';
                     }
@@ -185,10 +195,11 @@ document.addEventListener('DOMContentLoaded', function () {
         updateActiveToc();
     }
 
-    // Reading progress bar
+    // Reading progress bar + scroll depth tracking
     var progressBar = document.getElementById('reading-progress');
     if (progressBar) {
         var article = document.querySelector('.post-content');
+        var depthMarks = {};
         function updateProgress() {
             if (!article) return;
             var articleTop = article.offsetTop;
@@ -197,6 +208,12 @@ document.addEventListener('DOMContentLoaded', function () {
             var pct = Math.min(Math.max((scrolled / articleHeight) * 100, 0), 100);
             progressBar.style.width = pct + '%';
             progressBar.setAttribute('aria-valuenow', Math.round(pct));
+            [25, 50, 75, 100].forEach(function (mark) {
+                if (pct >= mark && !depthMarks[mark]) {
+                    depthMarks[mark] = true;
+                    gaEvent('scroll_depth', { percent: mark });
+                }
+            });
         }
         onScroll(updateProgress);
         updateProgress();
@@ -264,7 +281,36 @@ document.addEventListener('DOMContentLoaded', function () {
             limit: 10,
             fuzzy: false
         });
+
+        // Track search queries (debounced)
+        var searchTimer;
+        searchInput.addEventListener('input', function () {
+            clearTimeout(searchTimer);
+            var query = searchInput.value.trim();
+            if (query.length >= 3) {
+                searchTimer = setTimeout(function () {
+                    gaEvent('search', { search_term: query });
+                }, 1000);
+            }
+        });
     }
+
+    // Track external link clicks
+    document.addEventListener('click', function (e) {
+        var link = e.target.closest('a[href]');
+        if (!link) return;
+        var href = link.getAttribute('href');
+        if (href && href.indexOf('http') === 0 && link.hostname !== location.hostname) {
+            gaEvent('outbound_click', { url: href });
+        }
+    });
+
+    // Track series navigation clicks
+    document.querySelectorAll('.series-nav a').forEach(function (link) {
+        link.addEventListener('click', function () {
+            gaEvent('series_nav_click', { url: link.getAttribute('href') });
+        });
+    });
 
     // Scroll fade-in animation
     if ('IntersectionObserver' in window) {
