@@ -10,7 +10,7 @@ gem "jekyll-paginate", "~> 1.1"
 gem "jekyll-feed", "~> 0.17"
 
 group :test do
-  gem "html-proofer", "~> 5.0"
+  gem "html-proofer", "~> 5.2"
 end
 
 # Windows and JRuby does not include zoneinfo files, so bundle the tzinfo-data gem
