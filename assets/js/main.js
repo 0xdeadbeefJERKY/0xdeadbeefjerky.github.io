@@ -312,6 +312,44 @@ document.addEventListener('DOMContentLoaded', function () {
         });
     });
 
+    // Image lightbox — click to zoom
+    var lightbox = document.createElement('div');
+    lightbox.className = 'image-lightbox';
+    lightbox.setAttribute('role', 'dialog');
+    lightbox.setAttribute('aria-label', 'Zoomed image');
+    var lightboxImg = document.createElement('img');
+    lightboxImg.alt = '';
+    lightbox.appendChild(lightboxImg);
+    document.body.appendChild(lightbox);
+
+    function openLightbox(src, alt) {
+        lightboxImg.src = src;
+        lightboxImg.alt = alt;
+        lightbox.classList.add('open');
+    }
+
+    function closeLightbox() {
+        lightbox.classList.remove('open');
+    }
+
+    lightbox.addEventListener('click', closeLightbox);
+
+    document.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && lightbox.classList.contains('open')) {
+            closeLightbox();
+        }
+    });
+
+    var postContent = document.querySelector('.post-content');
+    if (postContent) {
+        postContent.addEventListener('click', function (e) {
+            var img = e.target.closest('img');
+            if (img) {
+                openLightbox(img.src, img.alt || '');
+            }
+        });
+    }
+
     // Scroll fade-in animation
     if ('IntersectionObserver' in window) {
         var observer = new IntersectionObserver(function (entries) {
