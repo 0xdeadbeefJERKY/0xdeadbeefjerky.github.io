@@ -4,7 +4,7 @@ description: >
     How I replaced Claude Code with a self-hosted Qwen3-Coder-Next-FP8 model
     and OpenCode on an NVIDIA DGX Spark to run Gas Town locally, cutting API
     costs and opening the door to performance optimization.
-date: 2026-04-06 01:00:00 -0500
+date: 2026-04-05 09:00:00 -0500
 categories: [AI, vibe coding, local lab]
 tags: [gas town, local inference]
 toc: true
