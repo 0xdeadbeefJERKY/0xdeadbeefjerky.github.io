@@ -26,7 +26,7 @@ p code, li code, td code, h1 code, h2 code, h3 code, h4 code {
 
   pre {
     background: var(--bg-code);
-    padding: var(--space-md);
+    padding: 0;
     overflow-x: auto;
     line-height: 1.5;
     margin: 0;
@@ -37,6 +37,11 @@ p code, li code, td code, h1 code, h2 code, h3 code, h4 code {
       border: none;
       color: var(--text-primary);
     }
+  }
+
+  // Reset table-wrap margin inside code blocks (inherited from _base.scss)
+  .table-wrap {
+    margin: 0;
   }
 
   // Line numbers
@@ -54,7 +59,7 @@ p code, li code, td code, h1 code, h2 code, h3 code, h4 code {
     }
 
     pre {
-      padding: var(--space-md) var(--space-sm);
+      padding: var(--space-sm) var(--space-sm);
     }
   }
 
@@ -62,9 +67,11 @@ p code, li code, td code, h1 code, h2 code, h3 code, h4 code {
     color: var(--text-secondary);
     opacity: 0.5;
     user-select: none;
+    padding-left: var(--space-sm);
     padding-right: var(--space-md);
     text-align: right;
-    min-width: 2em;
+    width: 3em;
+    min-width: 3em;
   }
 
   // Copy button
