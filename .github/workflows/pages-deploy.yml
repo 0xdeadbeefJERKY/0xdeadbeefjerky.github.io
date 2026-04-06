@@ -9,6 +9,15 @@ on:
       - README.md
       - LICENSE
 
+  pull_request:
+    branches:
+      - main
+      - master
+    paths-ignore:
+      - .gitignore
+      - README.md
+      - LICENSE
+
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
@@ -59,6 +68,7 @@ jobs:
           path: "_site${{ steps.pages.outputs.base_path }}"
 
   deploy:
+    if: github.event_name == 'push'
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
