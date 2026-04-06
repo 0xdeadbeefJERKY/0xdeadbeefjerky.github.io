@@ -1,0 +1,35 @@
+.image-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  background: rgba(10, 10, 15, 0.92);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-base);
+  cursor: zoom-out;
+
+  &.open {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  img {
+    max-width: 90vw;
+    max-height: 90vh;
+    object-fit: contain;
+    border-radius: var(--border-radius);
+    border: 1px solid var(--bg-tertiary);
+    box-shadow: 0 0 40px rgba(0, 255, 240, 0.15);
+    transition: transform var(--transition-base);
+    transform: scale(0.95);
+  }
+
+  &.open img {
+    transform: scale(1);
+  }
+}
